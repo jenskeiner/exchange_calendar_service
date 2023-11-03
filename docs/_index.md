@@ -5,8 +5,8 @@ type: docs
 layout: "single"
 
 menu:
-  docs:
-    weight: 0
+  docs_service:
+      weight: 0
 ---
 
 # Introduction

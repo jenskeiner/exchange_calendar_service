@@ -5,8 +5,8 @@ type: docs
 layout: single
 
 menu:
-  docs:
-    weight: 10
+  docs_service:
+      weight: 10
 ---
 
 # Basic usage
