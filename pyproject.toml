@@ -7,12 +7,12 @@ name = "exchange-calendar-service"
 dynamic = ["version"]
 description = "A simple HTTP-based web service to query exchange calendars."
 license = "Apache-2.0"
-authors = [{name = "Jens Keiner", email="jens.keiner@gmail.com"}]
+authors = [{ name = "Jens Keiner", email = "jens.keiner@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.11"
 keywords = ["exchange", "calendar", "trading", "holidays"]
 classifiers = [
-	"Development Status :: 4 - Beta",
+    "Development Status :: 4 - Beta",
     "License :: OSI Approved :: Apache Software License",
     "Intended Audience :: Developers",
     "Intended Audience :: Financial and Insurance Industry",
@@ -27,7 +27,7 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies =[
+dependencies = [
     "exchange-calendars-extensions>=0.8.4,<1",
     "fastapi>0,<1",
     "pyyaml>=6,<7",
@@ -51,8 +51,8 @@ variable = "PACKAGE_VERSION"
 
 [tool.hatch.build.targets.sdist]
 exclude = [
-  ".github",
-  ".pre-commit-config.yaml",
+    ".github",
+    ".pre-commit-config.yaml",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -70,4 +70,4 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=src/exchange_calendars_extensions --cov-report=term-missing"
+addopts = "--cov=src/exchange_calendar_service --cov-report=term-missing"

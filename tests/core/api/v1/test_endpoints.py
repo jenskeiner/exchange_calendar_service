@@ -5,10 +5,11 @@ from zoneinfo import ZoneInfo
 import pytest
 from pydantic import TypeAdapter
 
-from exchange_calendar_service.core.api.v1.endpoints import (
+from exchange_calendar_service.app.api import (
     DayClassification,
     SpecialOpenCloseDayClassification,
 )
+
 from .special_days import special_days
 
 

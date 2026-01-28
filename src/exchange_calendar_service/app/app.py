@@ -8,13 +8,14 @@ import exchange_calendars_extensions.core as ecx_core
 import fastapi
 import myers
 from exchange_calendars_extensions.api.changes import ChangeSetDict
-from fastapi import FastAPI, Depends, HTTPException, status, Body
+from fastapi import Body, Depends, FastAPI, HTTPException, status
 from fastapi.security.api_key import APIKeyHeader
 
+from exchange_calendar_service.core.common.cache import ExchangeCalendarCache
+from exchange_calendar_service.core.common.context import Context
+from exchange_calendar_service.core.common.util import log_iterable
+
 from .api.v1.endpoints import get_router
-from .common.cache import ExchangeCalendarCache
-from .common.context import Context
-from .common.util import log_iterable
 from .settings import settings
 
 log = logging.getLogger(__name__)
@@ -54,7 +55,9 @@ def app() -> FastAPI:
             init(settings)
 
     if settings.exchanges is None:
-        settings.exchanges = {x: x for x in ec.calendar_utils.get_calendar_names(include_aliases=False)}
+        settings.exchanges = {
+            x: x for x in ec.calendar_utils.get_calendar_names(include_aliases=False)
+        }
 
     # From the contents of _settings.exchanges, programmatically create dynamic Enum class with the name ExchangeEnum.
     # The keys of _settings.exchanges become the enum member keys/names and the values become the enum member values.
@@ -71,7 +74,11 @@ def app() -> FastAPI:
     except importlib.metadata.PackageNotFoundError:
         version = "unknown"
 
-    app = FastAPI(title="Exchange Calendar Service", version=version, description="A RESTful HTTP Service.")
+    app = FastAPI(
+        title="Exchange Calendar Service",
+        version=version,
+        description="A RESTful HTTP Service.",
+    )
 
     router_v1: fastapi.APIRouter = get_router(Exchanges)
 
@@ -84,7 +91,9 @@ def app() -> FastAPI:
         # Dependency that checks for the API key.
         async def get_api_key(api_key: str = Depends(api_key_header)):
             if api_key != settings.changes_api_key:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key"
+                )
 
         # Endpoint that requires an API key
         @app.post(
@@ -145,7 +154,12 @@ def app() -> FastAPI:
             for key in keys_to_add:
                 log.info(f"Adding new changes for exchange {key}:")
                 log_iterable(
-                    [" + " + line for line in changes_dict[key].model_dump_json(indent=2).split("\n")],
+                    [
+                        " + " + line
+                        for line in changes_dict[key]
+                        .model_dump_json(indent=2)
+                        .split("\n")
+                    ],
                     logging.INFO,
                 )
                 ecx_core.update_calendar(key, dict(changes_dict[key]))
@@ -161,7 +175,12 @@ def app() -> FastAPI:
                 if changes_dict[key] == changes_dict_prev[key]:
                     log.info(f"Changes remain the same for exchange {key}:")
                     log_iterable(
-                        ["   " + line for line in changes_dict[key].model_dump_json(indent=2).split("\n")],
+                        [
+                            "   " + line
+                            for line in changes_dict[key]
+                            .model_dump_json(indent=2)
+                            .split("\n")
+                        ],
                         logging.INFO,
                     )
                 else:
@@ -170,7 +189,9 @@ def app() -> FastAPI:
                         a=changes_dict_prev[key].model_dump_json(indent=2).split("\n"),
                         b=changes_dict[key].model_dump_json(indent=2).split("\n"),
                     )
-                    diff = [" " + action2str[action] + " " + line for action, line in diff]
+                    diff = [
+                        " " + action2str[action] + " " + line for action, line in diff
+                    ]
                     log_iterable(diff, logging.INFO)
 
                 ecx_core.update_calendar(key, dict(changes_dict[key]))
@@ -179,7 +200,12 @@ def app() -> FastAPI:
             for key in keys_to_remove:
                 log.info(f"Removing changes for exchange {key}:")
                 log_iterable(
-                    [" - " + line for line in changes_dict_prev[key].model_dump_json(indent=2).split("\n")],
+                    [
+                        " - " + line
+                        for line in changes_dict_prev[key]
+                        .model_dump_json(indent=2)
+                        .split("\n")
+                    ],
                     logging.INFO,
                 )
 

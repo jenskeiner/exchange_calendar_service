@@ -3,7 +3,7 @@ import uvicorn
 
 def main():
     uvicorn.run(
-        "exchange_calendar_service.core.app:app",
+        "exchange_calendar_service.app:app",
         factory=True,
         host="127.0.0.1",
         port=8080,

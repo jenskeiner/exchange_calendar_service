@@ -1,10 +1,10 @@
 import datetime as dt
 
-from exchange_calendar_service.core.api.v1.endpoints import (
-    StandardDayClassification,
-    DayTypeNonBusinessSpecial,
+from exchange_calendar_service.app.api import (
     DayTypeBusinessSpecial,
+    DayTypeNonBusinessSpecial,
     SpecialOpenCloseDayClassification,
+    StandardDayClassification,
 )
 
 xams_2021 = [
