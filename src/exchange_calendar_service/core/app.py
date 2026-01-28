@@ -3,6 +3,7 @@ import importlib.metadata
 import logging
 from enum import Enum
 
+import exchange_calendars as ec
 import exchange_calendars_extensions.core as ecx_core
 import fastapi
 import myers
@@ -20,10 +21,6 @@ log = logging.getLogger(__name__)
 
 
 def app() -> FastAPI:
-    # From the contents of _settings.exchanges, programmatically create dynamic Enum class with the name ExchangeEnum.
-    # The keys of _settings.exchanges become the enum member keys/names and the values become the enum member values.
-    Exchanges: type[Enum] = Enum("ExchangeEnum", settings.exchanges)
-
     # If _settings.init is not None, try to import it. Once imported. check if it is a callable with zero arguments.
     # If so, call it. Otherwise, raise an Exception and exit. Use importlib to import the callable.
     if settings.init:
@@ -56,12 +53,19 @@ def app() -> FastAPI:
             # Call the callable.
             init(settings)
 
+    if settings.exchanges is None:
+        settings.exchanges = {x: x for x in ec.calendar_utils.get_calendar_names(include_aliases=False)}
+
+    # From the contents of _settings.exchanges, programmatically create dynamic Enum class with the name ExchangeEnum.
+    # The keys of _settings.exchanges become the enum member keys/names and the values become the enum member values.
+    Exchanges: type[Enum] = Enum("ExchangeEnum", settings.exchanges)
+
     # Apply extensions to exchange calendars.
     ecx_core.apply_extensions()
 
     # Initialize app context.
     _ = Context(cache=ExchangeCalendarCache(Exchanges.__members__.keys()))
-    
+
     try:
         version = importlib.metadata.version("exchange_calendar_service")
     except importlib.metadata.PackageNotFoundError:

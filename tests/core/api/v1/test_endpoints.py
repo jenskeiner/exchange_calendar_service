@@ -1,14 +1,15 @@
-import pytest
-from http import HTTPStatus
 import datetime as dt
-from pydantic import TypeAdapter
+from http import HTTPStatus
 from zoneinfo import ZoneInfo
-from .special_days import special_days
 
-from exchange_calendar_service.main.api.v1.endpoints import (
+import pytest
+from pydantic import TypeAdapter
+
+from exchange_calendar_service.core.api.v1.endpoints import (
     DayClassification,
     SpecialOpenCloseDayClassification,
 )
+from .special_days import special_days
 
 
 @pytest.mark.usefixtures("client")

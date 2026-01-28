@@ -13,11 +13,11 @@ from cachetools import cached, LFUCache
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field, Tag, Discriminator
 
-from exchange_calendar_service.main.common.constants import (
+from exchange_calendar_service.core.common.constants import (
     standardised_tz_names,
 )
-from exchange_calendar_service.main.common.context import Context
-from exchange_calendar_service.main.common.util import get_enum_key_literal_type
+from exchange_calendar_service.core.common.context import Context
+from exchange_calendar_service.core.common.util import get_enum_key_literal_type
 
 
 @enum.unique

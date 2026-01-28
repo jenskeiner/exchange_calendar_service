@@ -38,4 +38,4 @@ WORKDIR /app
 COPY --from=builder --link /opt/venv /opt/venv
 
 ENTRYPOINT ["/opt/venv/bin/dumb-init", "--"]
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8000", "--factory", "exchange_calendar_service.main.app:app"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8000", "--factory", "exchange_calendar_service.core.app:app"]

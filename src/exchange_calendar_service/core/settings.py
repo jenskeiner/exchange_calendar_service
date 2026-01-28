@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import exchange_calendars as ec
 
 
 class Settings(BaseSettings):
@@ -15,7 +14,7 @@ class Settings(BaseSettings):
     init: str | None = None
 
     # The available exchanges.
-    exchanges: dict[str, str] = {x: x for x in ec.calendar_utils.get_calendar_names(include_aliases=False)}
+    exchanges: dict[str, str] | None = None
 
 
 settings = Settings()

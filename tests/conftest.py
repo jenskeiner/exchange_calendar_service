@@ -11,26 +11,26 @@ _test_exchanges = {
 
 @pytest.fixture(autouse=True)
 def settings():
-    import exchange_calendar_service.main.settings
-    from exchange_calendar_service.main.settings import Settings
+    import exchange_calendar_service.core.settings
+    from exchange_calendar_service.core.settings import Settings
 
     # Save the original settings.
-    settings0 = exchange_calendar_service.main.settings.settings
+    settings0 = exchange_calendar_service.core.settings.settings
 
     # Create a new settings object.
     settings = Settings(changes_api_key="test", init=None, exchanges=_test_exchanges)
 
     # Set the new settings object.
-    exchange_calendar_service.main.settings.settings = settings
+    exchange_calendar_service.core.settings.settings = settings
 
     yield settings
 
     # Reinstated the original settings.
-    exchange_calendar_service.main.settings.settings = settings0
+    exchange_calendar_service.core.settings.settings = settings0
 
 
 @pytest.fixture
 def client() -> TestClient:
-    from exchange_calendar_service.main.app import app
+    from exchange_calendar_service.core.app import app
 
     return TestClient(app())

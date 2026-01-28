@@ -1,5 +1,5 @@
 import pytest
-from exchange_calendar_service.main.util import ExchangeCalendarProxy, ExchangeCalendars
+from exchange_calendar_service.core.util import ExchangeCalendarProxy, ExchangeCalendars
 import exchange_calendars_extensions.core as ex
 import exchange_calendars as ec
 
@@ -54,9 +54,9 @@ class TestExchangeCalendars:
         """
         cache = ExchangeCalendars()
         cache.ensure(["XLON", "XSWX"])
-        
+
         yield cache
-        
+
         for key in list(cache.keys()):
             cache.clear(key)
 

@@ -1,6 +1,6 @@
 import datetime as dt
 
-from exchange_calendar_service.main.api.v1.endpoints import (
+from exchange_calendar_service.core.api.v1.endpoints import (
     StandardDayClassification,
     DayTypeNonBusinessSpecial,
     DayTypeBusinessSpecial,
