@@ -2,8 +2,7 @@
 *
 
 # Add back just the stuff we need to build the image.
-!exchange_calendar_service
-!poetry.lock
+!src
+!uv.lock
 !pyproject.toml
-!setup.py
 !README.md
