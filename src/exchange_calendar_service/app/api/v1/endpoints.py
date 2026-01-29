@@ -623,7 +623,7 @@ def get_router(exchanges_enum: type[Enum]):
         n: int = 1,
         range: int | None = None,
         tz: str | None = None,
-        skip_bad_dates: bool = False,
+        exclude_tags: list[str] | None = None,
     ) -> tuple[list[DayClassificationMap], int]:
         return _get_next_special_days0(
             day,
@@ -634,7 +634,7 @@ def get_router(exchanges_enum: type[Enum]):
             n,
             range,
             tz,
-            skip_bad_dates,
+            exclude_tags,
         )
 
     @router.get(
@@ -659,7 +659,7 @@ def get_router(exchanges_enum: type[Enum]):
         n: int = 1,
         range: int | None = None,
         tz: str | None = None,
-        skip_bad_dates: bool = False,
+        exclude_tags: list[str] | None = None,
     ) -> tuple[list[DayClassificationMap], int]:
         return _get_next_special_days0(
             day,
@@ -670,7 +670,7 @@ def get_router(exchanges_enum: type[Enum]):
             n,
             range,
             tz,
-            skip_bad_dates,
+            exclude_tags,
         )
 
     def _get_business_days(mic: str, start: dt.datetime, end: dt.datetime) -> list[dt.date]:
@@ -687,7 +687,7 @@ def get_router(exchanges_enum: type[Enum]):
         n: int,
         range: int | None,
         tz: str,
-        skip_bad_dates: bool,
+        exclude_tags: list[str] | None,
     ) -> tuple[list[DayClassificationMap], int]:
         result = dict()
         mics = mic if mic is not None else MICS
@@ -779,10 +779,9 @@ def get_router(exchanges_enum: type[Enum]):
                     # Safe updated entry back to special_days.
                     special_days[d.date] = v
 
-            # Remove bad dates, if specified
-            if skip_bad_dates and not forward and len(special_days) > 0:
-                # start and end are only set
-                special_days = _remove_bad_days(mics=list(mics), special_days=special_days)
+            # Remove dates with excluded tags, if specified
+            if exclude_tags and len(special_days) > 0:
+                special_days = _remove_days_with_tags(mics=list(mics), special_days=special_days, exclude_tags=exclude_tags)
 
             # Sort dict by date (key)
             special_days = OrderedDict(sorted(special_days.items(), key=lambda x: x[0], reverse=not forward))
@@ -841,65 +840,65 @@ def get_router(exchanges_enum: type[Enum]):
 
         return result, status
 
-    def get_bad_dates(
+    def get_dates_with_tags(
         mic: Iterable[SupportedMIC] | None = None,
         start: dt.date | None = None,
         end: dt.date | None = None,
+        tags: Iterable[str] | None = None,
     ) -> Iterable[dt.date]:
         """
-        Finds and returns bad dates for mic (if given), and within date range defined by start and end date.
-
-        test_docs parameter only passed when running unit tests
+        Finds and returns dates with specified tags for mic (if given), and within date range defined by start and end date.
         """
 
         if not end:
-            # if no end date specified, use today, i.e. ignore any future bad dates.
             end = pd.Timestamp.now().date()
 
         if not start:
-            # if no start date specified, use end - 365 days
             start = pd.Timestamp.now().date() - pd.Timedelta(years=1)
 
-        mics = (mic,) if mic else MICS
+        if not tags:
+            return []
 
-        # filter for start and end dates, and MIC if applicable
+        mics = (mic,) if mic else MICS
+        tags_set = set(tags)
+
         result = []
 
         for m in mics:
-            # get bad dates for MIC
-            result.extend(d for d, meta in Context().cache.get(m).meta(start=start, end=end) if "bad date" in meta.tags)
+            for d, meta in Context().cache.get(m).meta(start=start, end=end).items():
+                if tags_set.intersection(meta.tags):
+                    result.append((d, m))
 
         return result
 
-    def _remove_bad_days(
+    def _remove_days_with_tags(
         mics: Iterable[SupportedMIC],
         special_days: dict[dt.date, dict[DayClassification, list[SupportedMIC]]],
-        test_docs: list = None,
+        exclude_tags: list[str],
     ):
         """
-        Remove bad days from return dates, when parameter skip_bad_dates is true
+        Remove days with specified tags from return dates.
 
-        the test_docs variable is only set to not None by unit tests
+        Filters out any day that has at least one of the specified tags.
         """
 
         dates = list(special_days.keys())
-        start, end = str(min(dates)), str(max(dates))
+        start, end = min(dates), max(dates)
 
-        # get bad dates for mic, as list
-        bad_dates: Iterable[dt.date] = get_bad_dates(mic=mics, start=start, end=end, test_docs=test_docs)
+        excluded_dates: Iterable[tuple[dt.date, SupportedMIC]] = get_dates_with_tags(
+            mic=mics, start=start, end=end, tags=exclude_tags
+        )
 
-        # iterate through bad dates found and filter out irrelevant dates and mics
-        for item in bad_dates:
-            mic = item["mic"]
-            date = item["date"]
+        for date, mic in excluded_dates:
+            if date in special_days:
+                for day_type in special_days[date]:
+                    if mic in special_days[date][day_type]:
+                        special_days[date][day_type].remove(mic)
 
-            if date in list(special_days.keys()):
-                dateTypeKey = list(special_days[date].keys())[0]
-                if mic in special_days[date][dateTypeKey]:
-                    special_days[date][dateTypeKey].remove(mic)
-
-        # update special days to remove "empty" dates
-        special_days = {k: v for k, v in special_days.items() if list(v.values())[0] != []}
+        # Remove dates with no MICs remaining
+        special_days = {
+            k: v for k, v in special_days.items() if any(mics for mics in v.values())
+        }
 
         return special_days
 

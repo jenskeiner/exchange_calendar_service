@@ -438,3 +438,120 @@ class TestUpdateEndpoint:
         assert response.status_code == HTTPStatus.OK
         # Cache should be refreshed for the affected exchange
         mock_cache.refresh.assert_called_once_with("XNYS")
+
+
+class TestTagInjection:
+    """Tests for tag injection and retrieval via the update endpoint."""
+
+    def test_inject_and_retrieve_tags(self, client):
+        """Test that tags can be injected via update endpoint and retrieved via calendar.meta()."""
+        from datetime import date
+        from exchange_calendar_service.core.common.context import Context
+
+        mic = "XNYS"
+        test_date = "2024-01-15"
+        test_tags = ["test-tag", "another-tag"]
+
+        # Inject tags via update endpoint
+        response = client.post(
+            "/update",
+            json={mic: {"meta": {test_date: {"tags": test_tags}}}},
+            headers={"X-API-KEY": "test"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # Retrieve tags via calendar.meta()
+        calendar = Context().cache.get(mic)
+        meta_results = calendar.meta(start=date(2024, 1, 1), end=date(2024, 1, 31))
+
+        # Find the test date in results - meta() returns an OrderedDict
+        found_date = None
+        for d, meta in meta_results.items():
+            if d.date().isoformat() == test_date:
+                found_date = (d, meta)
+                break
+
+        assert found_date is not None, "Test date not found in meta results"
+        retrieved_date, retrieved_meta = found_date
+        assert set(retrieved_meta.tags) == set(test_tags)
+
+    def test_update_existing_tags(self, client):
+        """Test that existing tags can be updated via update endpoint."""
+        from datetime import date
+        from exchange_calendar_service.core.common.context import Context
+
+        mic = "XNYS"
+        test_date = "2024-02-20"
+        initial_tags = ["initial-tag"]
+
+        # Inject initial tags
+        response = client.post(
+            "/update",
+            json={mic: {"meta": {test_date: {"tags": initial_tags}}}},
+            headers={"X-API-KEY": "test"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # Verify initial tags
+        calendar = Context().cache.get(mic)
+        meta_results = calendar.meta(start=date(2024, 2, 1), end=date(2024, 2, 28))
+        for d, meta in meta_results.items():
+            if d.date().isoformat() == test_date:
+                assert meta.tags == initial_tags
+                break
+
+        # Update with new tags
+        updated_tags = ["updated-tag", "another-updated"]
+        response = client.post(
+            "/update",
+            json={mic: {"meta": {test_date: {"tags": updated_tags}}}},
+            headers={"X-API-KEY": "test"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # Verify updated tags
+        calendar = Context().cache.get(mic)
+        meta_results = calendar.meta(start=date(2024, 2, 1), end=date(2024, 2, 28))
+        for d, meta in meta_results.items():
+            if d.date().isoformat() == test_date:
+                assert set(meta.tags) == set(updated_tags)
+                break
+
+    def test_clear_tags(self, client):
+        """Test that tags can be cleared by setting empty list."""
+        from datetime import date
+        from exchange_calendar_service.core.common.context import Context
+
+        mic = "XNYS"
+        test_date = "2024-03-10"
+        test_tags = ["tag-to-clear"]
+
+        # Inject tags
+        response = client.post(
+            "/update",
+            json={mic: {"meta": {test_date: {"tags": test_tags}}}},
+            headers={"X-API-KEY": "test"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # Verify tags exist
+        calendar = Context().cache.get(mic)
+        meta_results = calendar.meta(start=date(2024, 3, 1), end=date(2024, 3, 31))
+        for d, meta in meta_results.items():
+            if d.date().isoformat() == test_date:
+                assert meta.tags == test_tags
+                break
+
+        # Clear tags - empty tags removes the date from meta entirely
+        response = client.post(
+            "/update",
+            json={mic: {"meta": {test_date: {"tags": []}}}},
+            headers={"X-API-KEY": "test"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # Verify tags are cleared - date should no longer be in meta results
+        calendar = Context().cache.get(mic)
+        meta_results = calendar.meta(start=date(2024, 3, 1), end=date(2024, 3, 31))
+        for d, meta in meta_results.items():
+            assert d.date().isoformat() != test_date, "Date should be removed when tags are empty"

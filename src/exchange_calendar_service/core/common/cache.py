@@ -62,5 +62,7 @@ class ExchangeCalendarCache:
         return c
 
     def refresh(self, mic: str) -> None:
-        self.get.cache.pop(self.get.cache_key(self, mic))
+        key = (mic,)
+        if key in self.get.cache:
+            self.get.cache.pop(key)
         _ = self.get(mic)

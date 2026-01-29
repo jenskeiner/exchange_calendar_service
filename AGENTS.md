@@ -42,6 +42,7 @@ Prefer setting environment variables when running the app to change defaults set
 - Avoid using @dataclass, use Pydantic instead
 - Test are grouped into files matching the directory structure of the code unde rtest.
 - Test classes group tests that are related to the same functionality.
+- Prefer immutable collections (e.g. tuples) over mutable ones (e.g. lists) where possible.
 
 ## Testing
 
