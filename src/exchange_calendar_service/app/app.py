@@ -32,7 +32,9 @@ def app(_settings: Settings | None = None) -> FastAPI:
         import inspect
 
         # Split into module and callable name.
-        module_name, callable_name = settings.init.rsplit(":", 1)
+        parts = settings.init.rsplit(":", 1)
+        module_name = parts[0]
+        callable_name = parts[1] if len(parts) > 1 else None
 
         if not callable_name:
             _ = importlib.import_module(module_name)
