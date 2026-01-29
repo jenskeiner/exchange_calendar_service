@@ -40,6 +40,8 @@ Prefer setting environment variables when running the app to change defaults set
 - Pydantic for config/data classes
 - `gh` CLI for GitHub auth (no separate token)
 - Avoid using @dataclass, use Pydantic instead
+- Test are grouped into files matching the directory structure of the code unde rtest.
+- Test classes group tests that are related to the same functionality.
 
 ## Testing
 
