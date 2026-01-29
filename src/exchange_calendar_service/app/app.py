@@ -160,6 +160,7 @@ def app(_settings: Settings | None = None) -> FastAPI:
             for key in keys_to_add:
                 log.info(f"Adding new changes for exchange {key}:")
                 log_iterable(
+                    log,
                     [
                         " + " + line
                         for line in changes_dict[key]
@@ -181,6 +182,7 @@ def app(_settings: Settings | None = None) -> FastAPI:
                 if changes_dict[key] == changes_dict_prev[key]:
                     log.info(f"Changes remain the same for exchange {key}:")
                     log_iterable(
+                        log,
                         [
                             "   " + line
                             for line in changes_dict[key]
@@ -198,7 +200,7 @@ def app(_settings: Settings | None = None) -> FastAPI:
                     diff = [
                         " " + action2str[action] + " " + line for action, line in diff
                     ]
-                    log_iterable(diff, logging.INFO)
+                    log_iterable(log, diff, logging.INFO)
 
                 ecx_core.update_calendar(key, dict(changes_dict[key]))
 
@@ -206,6 +208,7 @@ def app(_settings: Settings | None = None) -> FastAPI:
             for key in keys_to_remove:
                 log.info(f"Removing changes for exchange {key}:")
                 log_iterable(
+                    log,
                     [
                         " - " + line
                         for line in changes_dict_prev[key]
