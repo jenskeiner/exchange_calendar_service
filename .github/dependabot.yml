@@ -8,8 +8,12 @@ updates:
   - package-ecosystem: "github-actions" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "daily"
-  - package-ecosystem: "pip" # See documentation for possible values
+      interval: "monthly"
+    cooldown:
+      default-days: 7
+  - package-ecosystem: "uv" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "daily"
+      interval: "monthly"
+    cooldown:
+      default-days: 7
