@@ -623,7 +623,7 @@ def get_router(exchanges_enum: type[Enum]):
         n: int = 1,
         range: int | None = None,
         tz: str | None = None,
-        exclude_tags: list[str] | None = None,
+        exclude_tags: list[str] | None = Query(default=None),
     ) -> tuple[list[DayClassificationMap], int]:
         return _get_next_special_days0(
             day,
@@ -634,7 +634,7 @@ def get_router(exchanges_enum: type[Enum]):
             n,
             range,
             tz,
-            exclude_tags,
+            frozenset(exclude_tags) if exclude_tags is not None else None,
         )
 
     @router.get(
@@ -659,7 +659,7 @@ def get_router(exchanges_enum: type[Enum]):
         n: int = 1,
         range: int | None = None,
         tz: str | None = None,
-        exclude_tags: list[str] | None = None,
+        exclude_tags: list[str] | None = Query(default=None),
     ) -> tuple[list[DayClassificationMap], int]:
         return _get_next_special_days0(
             day,
@@ -670,7 +670,7 @@ def get_router(exchanges_enum: type[Enum]):
             n,
             range,
             tz,
-            exclude_tags,
+            frozenset(exclude_tags) if exclude_tags is not None else None,
         )
 
     def _get_business_days(mic: str, start: dt.datetime, end: dt.datetime) -> list[dt.date]:
@@ -859,7 +859,15 @@ def get_router(exchanges_enum: type[Enum]):
         if not tags:
             return []
 
-        mics = (mic,) if mic else MICS
+        # Convert mic to tuple if it's an iterable (but not string)
+        if mic is not None:
+            if isinstance(mic, str):
+                mics = (mic,)
+            else:
+                mics = tuple(mic)
+        else:
+            mics = MICS
+
         tags_set = set(tags)
 
         result = []
@@ -867,7 +875,8 @@ def get_router(exchanges_enum: type[Enum]):
         for m in mics:
             for d, meta in Context().cache.get(m).meta(start=start, end=end).items():
                 if tags_set.intersection(meta.tags):
-                    result.append((d, m))
+                    # Convert Timestamp to date for consistent comparison
+                    result.append((d.date() if hasattr(d, 'date') else d, m))
 
         return result
 
