@@ -791,9 +791,7 @@ def get_router(exchanges_enum: type[Enum]):
             if range_threshold is not None:
                 special_days = OrderedDict(
                     filter(
-                        lambda x: dt.date.fromisoformat(x[0]) <= range_threshold
-                        if forward
-                        else dt.date.fromisoformat(x[0]) >= range_threshold,
+                        lambda x: x[0] <= range_threshold if forward else x[0] >= range_threshold,
                         special_days.items(),
                     )
                 )
