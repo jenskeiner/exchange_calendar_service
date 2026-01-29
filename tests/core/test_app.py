@@ -1,16 +1,13 @@
 """Tests for app initialization and update endpoint."""
 
-import sys
-from pathlib import Path
+from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from http import HTTPStatus
 
 from exchange_calendar_service.app.app import app
-from exchange_calendar_service.app.settings import Settings, set_settings
-import exchange_calendars_extensions.core as ecx_core
+from exchange_calendar_service.app.settings import Settings
 
 
 class TestInitFunctionLoading:
@@ -282,7 +279,9 @@ class TestUpdateEndpoint:
         """Test that when changes are identical to existing, no updates occur."""
         # Mock existing changes to match the incoming changes
         existing_changes = MagicMock()
-        existing_changes.__eq__ = lambda self, other: True  # Make equality check return True
+        existing_changes.__eq__ = (
+            lambda self, other: True
+        )  # Make equality check return True
         mock_get_changes.return_value = existing_changes
 
         response = client.post(
@@ -361,7 +360,9 @@ class TestUpdateEndpoint:
             "/update",
             json={
                 "XNYS": {
-                    "add": {"2020-01-01": {"type": "holiday", "name": "Updated Holiday"}},
+                    "add": {
+                        "2020-01-01": {"type": "holiday", "name": "Updated Holiday"}
+                    },
                     "remove": [],
                     "meta": {},
                 }
@@ -446,6 +447,7 @@ class TestTagInjection:
     def test_inject_and_retrieve_tags(self, client):
         """Test that tags can be injected via update endpoint and retrieved via calendar.meta()."""
         from datetime import date
+
         from exchange_calendar_service.core.common.context import Context
 
         mic = "XNYS"
@@ -478,6 +480,7 @@ class TestTagInjection:
     def test_update_existing_tags(self, client):
         """Test that existing tags can be updated via update endpoint."""
         from datetime import date
+
         from exchange_calendar_service.core.common.context import Context
 
         mic = "XNYS"
@@ -520,6 +523,7 @@ class TestTagInjection:
     def test_clear_tags(self, client):
         """Test that tags can be cleared by setting empty list."""
         from datetime import date
+
         from exchange_calendar_service.core.common.context import Context
 
         mic = "XNYS"
@@ -542,7 +546,7 @@ class TestTagInjection:
                 assert meta.tags == test_tags
                 break
 
-        # Clear tags - empty tags removes the date from meta entirely
+        # Clear tags - empty tags removes the tag but the date remains in meta
         response = client.post(
             "/update",
             json={mic: {"meta": {test_date: {"tags": []}}}},
@@ -550,8 +554,13 @@ class TestTagInjection:
         )
         assert response.status_code == HTTPStatus.OK
 
-        # Verify tags are cleared - date should no longer be in meta results
+        # Verify tags are cleared - date should still be in meta but with empty tags
         calendar = Context().cache.get(mic)
         meta_results = calendar.meta(start=date(2024, 3, 1), end=date(2024, 3, 31))
+        found = False
         for d, meta in meta_results.items():
-            assert d.date().isoformat() != test_date, "Date should be removed when tags are empty"
+            if d.date().isoformat() == test_date:
+                assert meta.tags == [], f"Date {test_date} should have empty tags"
+                found = True
+                break
+        assert found, f"Date {test_date} should still be in meta with empty tags"

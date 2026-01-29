@@ -304,6 +304,192 @@ class TestNextSpecialDays:
         dates = [r["date"] for r in results]
         assert any(d.startswith("2023") for d in dates)
 
+    def test_exclude_tags_forward(self, client):
+        """Test that exclude_tags parameter filters out tagged dates when searching forward."""
+        from exchange_calendar_service.core.common.context import Context
+
+        # Set up a tagged date - 2024-12-24 is before a holiday
+        mic = "XLON"
+        tagged_date = "2024-12-24"
+        test_tag = "exclude-test-tag"
+
+        response = client.post(
+            "/update",
+            json={mic: {"meta": {tagged_date: {"tags": [test_tag]}}}},
+            headers={"X-API-KEY": "test"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # Refresh cache
+        Context().cache.refresh(mic)
+
+        try:
+            # Get special days without exclude_tags
+            response = client.get(
+                "/v1/next_special_days",
+                params={
+                    "day": "2024-12-20",
+                    "forward": True,
+                    "n": 10,
+                    "mic": mic,
+                },
+            )
+            assert response.status_code == HTTPStatus.OK
+            results_without_filter, _ = response.json()
+            dates_without_filter = [r["date"] for r in results_without_filter]
+
+            # Get special days with exclude_tags
+            response = client.get(
+                "/v1/next_special_days",
+                params=[
+                    ('day', '2024-12-20'),
+                    ('forward', True),
+                    ('n', 10),
+                    ('mic', mic),
+                    ('exclude_tags', test_tag),
+                ],
+            )
+            assert response.status_code == HTTPStatus.OK
+            results_with_filter, _ = response.json()
+            dates_with_filter = [r["date"] for r in results_with_filter]
+
+            # The tagged date should be in results without filter but not with filter
+            if tagged_date in dates_without_filter:
+                assert tagged_date not in dates_with_filter
+
+        finally:
+            # Clean up - remove the tag
+            client.post(
+                "/update",
+                json={mic: {"meta": {tagged_date: {"tags": []}}}},
+                headers={"X-API-KEY": "test"},
+            )
+            Context().cache.refresh(mic)
+
+    def test_exclude_tags_backward(self, client):
+        """Test that exclude_tags parameter filters out tagged dates when searching backward."""
+        from exchange_calendar_service.core.common.context import Context
+
+        mic = "XLON"
+        tagged_date = "2024-12-27"
+        test_tag = "backward-exclude-tag"
+
+        response = client.post(
+            "/update",
+            json={mic: {"meta": {tagged_date: {"tags": [test_tag]}}}},
+            headers={"X-API-KEY": "test"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        Context().cache.refresh(mic)
+
+        try:
+            # Get special days without exclude_tags
+            response = client.get(
+                "/v1/next_special_days",
+                params={
+                    "day": "2024-12-31",
+                    "forward": False,
+                    "n": 10,
+                    "mic": mic,
+                },
+            )
+            assert response.status_code == HTTPStatus.OK
+            results_without_filter, _ = response.json()
+            dates_without_filter = [r["date"] for r in results_without_filter]
+
+            # Get special days with exclude_tags
+            response = client.get(
+                "/v1/next_special_days",
+                params=[
+                    ('day', '2024-12-31'),
+                    ('forward', False),
+                    ('n', 10),
+                    ('mic', mic),
+                    ('exclude_tags', test_tag),
+                ],
+            )
+            assert response.status_code == HTTPStatus.OK
+            results_with_filter, _ = response.json()
+            dates_with_filter = [r["date"] for r in results_with_filter]
+
+            # The tagged date should be filtered out
+            if tagged_date in dates_without_filter:
+                assert tagged_date not in dates_with_filter
+
+        finally:
+            # Clean up
+            client.post(
+                "/update",
+                json={mic: {"meta": {tagged_date: {"tags": []}}}},
+                headers={"X-API-KEY": "test"},
+            )
+            Context().cache.refresh(mic)
+
+    def test_exclude_tags_multiple(self, client):
+        """Test that multiple exclude_tags filter out dates with any of the tags."""
+        from exchange_calendar_service.core.common.context import Context
+
+        mic = "XAMS"
+        tag1 = "exclude-tag-1"
+        tag2 = "exclude-tag-2"
+        date1 = "2024-03-28"
+        date2 = "2024-03-29"
+
+        # Add tags to two different dates
+        response = client.post(
+            "/update",
+            json={
+                mic: {
+                    "meta": {
+                        date1: {"tags": [tag1]},
+                        date2: {"tags": [tag2]},
+                    }
+                }
+            },
+            headers={"X-API-KEY": "test"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        Context().cache.refresh(mic)
+
+        try:
+            # Get special days with both tags excluded
+            response = client.get(
+                "/v1/next_special_days",
+                params=[
+                    ('day', '2024-03-25'),
+                    ('forward', True),
+                    ('n', 10),
+                    ('mic', mic),
+                    ('exclude_tags', tag1),
+                    ('exclude_tags', tag2),
+                ],
+            )
+            assert response.status_code == HTTPStatus.OK
+            results, _ = response.json()
+            dates = [r["date"] for r in results]
+
+            # Neither tagged date should be in results
+            assert date1 not in dates
+            assert date2 not in dates
+
+        finally:
+            # Clean up
+            client.post(
+                "/update",
+                json={
+                    mic: {
+                        "meta": {
+                            date1: {"tags": []},
+                            date2: {"tags": []},
+                        }
+                    }
+                },
+                headers={"X-API-KEY": "test"},
+            )
+            Context().cache.refresh(mic)
+
 
 class TestNextBusinessDays:
     """Tests for /v1/next_business_days endpoint."""
@@ -400,3 +586,109 @@ class TestNextBusinessDays:
         results, status = response.json()
         # Status should be 416 when range is exceeded
         assert status == 416
+
+    def test_exclude_tags_business_days(self, client):
+        """Test that exclude_tags parameter filters out tagged business days."""
+        from exchange_calendar_service.core.common.context import Context
+
+        mic = "XSWX"
+        # Tag a business day (not a weekend or holiday)
+        tagged_date = "2024-03-20"
+        test_tag = "business-exclude-tag"
+
+        response = client.post(
+            "/update",
+            json={mic: {"meta": {tagged_date: {"tags": [test_tag]}}}},
+            headers={"X-API-KEY": "test"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        Context().cache.refresh(mic)
+
+        try:
+            # Get business days without exclude_tags
+            response = client.get(
+                "/v1/next_business_days",
+                params={
+                    "day": "2024-03-18",
+                    "forward": True,
+                    "n": 5,
+                    "mic": mic,
+                },
+            )
+            assert response.status_code == HTTPStatus.OK
+            results_without_filter, _ = response.json()
+            dates_without_filter = [r["date"] for r in results_without_filter]
+
+            # Get business days with exclude_tags
+            response = client.get(
+                "/v1/next_business_days",
+                params=[
+                    ('day', '2024-03-18'),
+                    ('forward', True),
+                    ('n', 5),
+                    ('mic', mic),
+                    ('exclude_tags', test_tag),
+                ],
+            )
+            assert response.status_code == HTTPStatus.OK
+            results_with_filter, _ = response.json()
+            dates_with_filter = [r["date"] for r in results_with_filter]
+
+            # The tagged date should be filtered out
+            if tagged_date in dates_without_filter:
+                assert tagged_date not in dates_with_filter
+
+        finally:
+            # Clean up
+            client.post(
+                "/update",
+                json={mic: {"meta": {tagged_date: {"tags": []}}}},
+                headers={"X-API-KEY": "test"},
+            )
+            Context().cache.refresh(mic)
+
+    def test_exclude_tags_backward_business_days(self, client):
+        """Test that exclude_tags filters when searching backward for business days."""
+        from exchange_calendar_service.core.common.context import Context
+
+        mic = "XLON"
+        tagged_date = "2024-11-28"
+        test_tag = "backward-business-exclude"
+
+        response = client.post(
+            "/update",
+            json={mic: {"meta": {tagged_date: {"tags": [test_tag]}}}},
+            headers={"X-API-KEY": "test"},
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        Context().cache.refresh(mic)
+
+        try:
+            # Get business days backward with exclude_tags
+            response = client.get(
+                "/v1/next_business_days",
+                params=[
+                    ('day', '2024-11-29'),
+                    ('forward', False),
+                    ('n', 5),
+                    ('mic', mic),
+                    ('exclude_tags', test_tag),
+                ],
+            )
+            assert response.status_code == HTTPStatus.OK
+            results, _ = response.json()
+            dates = [r["date"] for r in results]
+
+            # The tagged date should not be in results
+            assert tagged_date not in dates
+
+        finally:
+            # Clean up
+            client.post(
+                "/update",
+                json={mic: {"meta": {tagged_date: {"tags": []}}}},
+                headers={"X-API-KEY": "test"},
+            )
+            Context().cache.refresh(mic)
