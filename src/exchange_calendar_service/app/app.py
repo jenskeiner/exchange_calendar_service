@@ -16,12 +16,15 @@ from exchange_calendar_service.core.common.context import Context
 from exchange_calendar_service.core.common.util import log_iterable
 
 from .api.v1.endpoints import get_router
+from .settings import Settings
 
 log = logging.getLogger(__name__)
 
 
-def app() -> FastAPI:
-    from .settings import settings
+def app(_settings: Settings | None = None) -> FastAPI:
+    from .settings import get_settings
+
+    settings = _settings or get_settings()
 
     # If settings.init is not None, try to import it. Once imported. check if it is a callable with zero arguments.
     # If so, call it. Otherwise, raise an Exception and exit. Use importlib to import the callable.

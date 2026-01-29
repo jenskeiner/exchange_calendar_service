@@ -15,21 +15,21 @@ from .special_days import special_days
 
 @pytest.mark.usefixtures("client")
 class TestVenues:
-    def test_get_venues(self, client, settings):
+    def test_get_venues(self, client, test_settings):
         """This test verifies that the GET /v1/mics endpoint returns a list of all available exchange venues."""
         response = client.get("/v1/mics")
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "application/json"
-        assert response.json() == [x for x in settings.exchanges.keys()]
+        assert response.json() == [x for x in test_settings.exchanges.keys()]
 
-    def test_get_mic2name(self, client, settings):
+    def test_get_mic2name(self, client, test_settings):
         """This test verifies that the GET /v1/mic2name endpoint returns a dictionary mapping MICs to venue names."""
         response = client.get("/v1/mic2name")
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "application/json"
-        assert response.json() == {x: y for x, y in settings.exchanges.items()}
+        assert response.json() == {x: y for x, y in test_settings.exchanges.items()}
 
-    def test_get_timezones(self, client, settings):
+    def test_get_timezones(self, client, test_settings):
         """This test verifies that the GET /v1/timezones endpoint returns the correct timezone or standard time for
         each exchange.
         """
@@ -47,7 +47,7 @@ class TestVenues:
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "application/json"
         assert response.json() == [
-            {"mic": x, "tz": mic2tz[x]} for x in settings.exchanges.keys()
+            {"mic": x, "tz": mic2tz[x]} for x in test_settings.exchanges.keys()
         ]
 
         # Get standard time for one exchange.
@@ -71,7 +71,7 @@ class TestVenues:
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "application/json"
         assert response.json() == [
-            {"mic": x, "tz": mic2standard_time[x]} for x in settings.exchanges.keys()
+            {"mic": x, "tz": mic2standard_time[x]} for x in test_settings.exchanges.keys()
         ]
 
         # Get timezone for one exchange.
@@ -92,7 +92,7 @@ class TestSpecialDays:
     )
     @pytest.mark.parametrize("year", [2021, 2022, 2023])
     @pytest.mark.parametrize("mic", ["XAMS", "XLON", "XSWX"])
-    def test_special_days(self, client, settings, mic: str, year: int, timezone: str):
+    def test_special_days(self, client, test_settings, mic: str, year: int, timezone: str):
         """This test verifies that the POST /v1/special_days endpoint returns the correct special days for each
         exchange.
         """
