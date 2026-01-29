@@ -14,7 +14,6 @@ from fastapi.security.api_key import APIKeyHeader
 from exchange_calendar_service.core.common.cache import ExchangeCalendarCache
 from exchange_calendar_service.core.common.context import Context
 from exchange_calendar_service.core.common.util import log_iterable
-
 from .api.v1.endpoints import get_router
 from .settings import Settings
 
@@ -109,31 +108,31 @@ def app(_settings: Settings | None = None) -> FastAPI:
             dependencies=[Depends(get_api_key)],
         )
         async def update(
-            changes_dict: ChangeSetDict = Body(
-                examples={
-                    "example 1": {
-                        "summary": "foo",
-                        "description": "bar",
-                        "value": {
-                            "XNYS": {
-                                "add": {
-                                    "2020-01-01": {
-                                        "type": "holiday",
-                                        "name": "New Year's Day",
-                                    }
-                                },
-                                "remove": ["2020-01-01"],
-                                "meta": {
-                                    "2020-01-01": {
-                                        "tags": ["tag1", "tag2"],
-                                        "comment": "This is a comment.",
-                                    }
-                                },
-                            }
-                        },
+                changes_dict: ChangeSetDict = Body(
+                    examples={
+                        "example 1": {
+                            "summary": "foo",
+                            "description": "bar",
+                            "value": {
+                                "XNYS": {
+                                    "add": {
+                                        "2020-01-01": {
+                                            "type": "holiday",
+                                            "name": "New Year's Day",
+                                        }
+                                    },
+                                    "remove": ["2020-01-01"],
+                                    "meta": {
+                                        "2020-01-01": {
+                                            "tags": ["tag1", "tag2"],
+                                            "comment": "This is a comment.",
+                                        }
+                                    },
+                                }
+                            },
+                        }
                     }
-                }
-            ),
+                ),
         ):
             log.info("Received changes via endpoint.")
 
@@ -164,8 +163,8 @@ def app(_settings: Settings | None = None) -> FastAPI:
                     [
                         " + " + line
                         for line in changes_dict[key]
-                        .model_dump_json(indent=2)
-                        .split("\n")
+                    .model_dump_json(indent=2)
+                    .split("\n")
                     ],
                     logging.INFO,
                 )
@@ -186,8 +185,8 @@ def app(_settings: Settings | None = None) -> FastAPI:
                         [
                             "   " + line
                             for line in changes_dict[key]
-                            .model_dump_json(indent=2)
-                            .split("\n")
+                        .model_dump_json(indent=2)
+                        .split("\n")
                         ],
                         logging.INFO,
                     )
@@ -212,8 +211,8 @@ def app(_settings: Settings | None = None) -> FastAPI:
                     [
                         " - " + line
                         for line in changes_dict_prev[key]
-                        .model_dump_json(indent=2)
-                        .split("\n")
+                    .model_dump_json(indent=2)
+                    .split("\n")
                     ],
                     logging.INFO,
                 )
