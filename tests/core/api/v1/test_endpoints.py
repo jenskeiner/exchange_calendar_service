@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from pydantic import TypeAdapter
 
-from exchange_calendar_service.app.api import (
+from exchange_calendar_service.app.api.v1.endpoints import (
     DayClassification,
     SpecialOpenCloseDayClassification,
 )
@@ -46,7 +46,9 @@ class TestVenues:
 
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "application/json"
-        assert response.json() == [{"mic": x, "tz": mic2tz[x]} for x in settings.exchanges.keys()]
+        assert response.json() == [
+            {"mic": x, "tz": mic2tz[x]} for x in settings.exchanges.keys()
+        ]
 
         # Get standard time for one exchange.
         mic = "XLON"
@@ -68,7 +70,9 @@ class TestVenues:
 
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "application/json"
-        assert response.json() == [{"mic": x, "tz": mic2standard_time[x]} for x in settings.exchanges.keys()]
+        assert response.json() == [
+            {"mic": x, "tz": mic2standard_time[x]} for x in settings.exchanges.keys()
+        ]
 
         # Get timezone for one exchange.
         mic = "XLON"
@@ -83,7 +87,9 @@ ta = TypeAdapter(list[DayClassification])
 
 
 class TestSpecialDays:
-    @pytest.mark.parametrize("timezone", [None, "CET", "Europe/Berlin", "Europe/London"])
+    @pytest.mark.parametrize(
+        "timezone", [None, "CET", "Europe/Berlin", "Europe/London"]
+    )
     @pytest.mark.parametrize("year", [2021, 2022, 2023])
     @pytest.mark.parametrize("mic", ["XAMS", "XLON", "XSWX"])
     def test_special_days(self, client, settings, mic: str, year: int, timezone: str):
