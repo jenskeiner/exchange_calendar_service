@@ -35,7 +35,6 @@ dependencies = [
     "myers>1,<2",
     "cachetools>6,<7",
     "pytz",
-    "frozendict>=2,<3",
     "uvicorn>=0.40.0,<1"
 ]
 
