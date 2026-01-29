@@ -54,7 +54,7 @@ holiday_day_type = "holiday"
 special_open_day_type = "special open"
 special_close_day_type = "special close"
 msci_rebal_day_type = "MSCI rebal"
-special_day_types = frozenset(
+special_day_types = tuple(
     {
         holiday_day_type,
         special_open_day_type,
@@ -66,11 +66,11 @@ special_day_types = frozenset(
     }
 )
 
-# frozenset that contains all members of DayTypeBusinessSpecial and DayTypeNonBusinessSpecial.
-special_day_types2: set[Union[DayTypeBusinessSpecial, DayTypeNonBusinessSpecial]] = frozenset(
+# Tuple that contains all members of DayTypeBusinessSpecial and DayTypeNonBusinessSpecial.
+special_day_types2: tuple[Union[DayTypeBusinessSpecial, DayTypeNonBusinessSpecial], ...] = tuple(
     itertools.chain([x for x in DayTypeBusinessSpecial], [x for x in DayTypeNonBusinessSpecial])
 )
-business_day_types2: set[Union[DayTypeBusinessRegular, DayTypeBusinessSpecial]] = frozenset(
+business_day_types2: tuple[Union[DayTypeBusinessRegular, DayTypeBusinessSpecial], ...] = tuple(
     itertools.chain([x for x in DayTypeBusinessRegular], [x for x in DayTypeBusinessSpecial])
 )
 
@@ -196,10 +196,10 @@ def get_router(exchanges_enum: type[Enum]):
     SupportedMIC = get_enum_key_literal_type(exchanges_enum)
 
     # Type alias for a list that can only contain supported MICs, with examples.
-    SupportedMICs = Annotated[list[SupportedMIC], Field(examples=[MICS])]
+    SupportedMICs = Annotated[tuple[SupportedMIC,...], Field(examples=[MICS])]
 
     class StandardDayClassificationWithMics(StandardDayClassification):
-        mics: list[SupportedMIC]
+        mics: tuple[SupportedMIC,...]
 
     class SpecialOpenCloseDayClassificationWithMics(
         SpecialOpenCloseDayClassification, StandardDayClassificationWithMics
@@ -235,7 +235,7 @@ def get_router(exchanges_enum: type[Enum]):
         """
         Return a list of valid MIC codes
         """
-        return list(exchanges_enum.__members__.keys())
+        return tuple(exchanges_enum.__members__.keys())
 
     @router.get(
         "/mic2name",
@@ -619,7 +619,7 @@ def get_router(exchanges_enum: type[Enum]):
         inclusive: bool = True,
         forward: bool = True,
         mic: list[SupportedMIC] = Query(default=None),
-        types: set[DayTypeBusinessSpecial | DayTypeNonBusinessSpecial] = Query(default=special_day_types2),
+        types: tuple[DayTypeBusinessSpecial | DayTypeNonBusinessSpecial, ...] | None = Query(default=special_day_types2),
         n: int = 1,
         range: int | None = None,
         tz: str | None = None,
@@ -629,12 +629,12 @@ def get_router(exchanges_enum: type[Enum]):
             day,
             inclusive,
             forward,
-            frozenset(mic) if mic is not None else mic,
-            frozenset(types) if types is not None else special_day_types2,
+            tuple(mic) if mic is not None else mic,
+            tuple(types) if types is not None else special_day_types2,
             n,
             range,
             tz,
-            frozenset(exclude_tags) if exclude_tags is not None else None,
+            tuple(exclude_tags) if exclude_tags is not None else None,
         )
 
     @router.get(
@@ -655,7 +655,7 @@ def get_router(exchanges_enum: type[Enum]):
         inclusive: bool = True,
         forward: bool = True,
         mic: list[SupportedMIC] = Query(default=None),
-        types: set[DayTypeBusinessSpecial | DayTypeBusinessRegular] = Query(default=business_day_types2),
+        types: tuple[DayTypeBusinessSpecial | DayTypeBusinessRegular, ...] | None = Query(default=business_day_types2),
         n: int = 1,
         range: int | None = None,
         tz: str | None = None,
@@ -665,12 +665,12 @@ def get_router(exchanges_enum: type[Enum]):
             day,
             inclusive,
             forward,
-            frozenset(mic) if mic is not None else mic,
-            frozenset(types) if types is not None else business_day_types2,
+            tuple(mic) if mic is not None else mic,
+            tuple(types) if types is not None else business_day_types2,
             n,
             range,
             tz,
-            frozenset(exclude_tags) if exclude_tags is not None else None,
+            tuple(exclude_tags) if exclude_tags is not None else None,
         )
 
     def _get_business_days(mic: str, start: dt.datetime, end: dt.datetime) -> list[dt.date]:
@@ -682,12 +682,12 @@ def get_router(exchanges_enum: type[Enum]):
         day: dt.date,
         inclusive: bool,
         forward: bool,
-        mic: frozenset | None,
-        types: frozenset | None,
+        mic: tuple | None,
+        types: tuple | None,
         n: int,
         range: int | None,
         tz: str,
-        exclude_tags: list[str] | None,
+        exclude_tags: tuple[str] | None,
     ) -> tuple[list[DayClassificationMap], int]:
         result = dict()
         mics = mic if mic is not None else MICS
