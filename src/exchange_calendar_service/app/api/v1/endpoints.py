@@ -4,14 +4,13 @@ import itertools
 from collections import OrderedDict
 from collections.abc import Iterable
 from enum import Enum
-from typing import Annotated, Any, Literal
-from typing import Union
+from typing import Annotated, Any, Literal, Union
 from zoneinfo import ZoneInfo
 
 import pandas as pd
-from cachetools import cached, LFUCache
+from cachetools import LFUCache, cached
 from fastapi import APIRouter, Query
-from pydantic import BaseModel, Field, Tag, Discriminator
+from pydantic import BaseModel, Discriminator, Field, Tag
 
 from exchange_calendar_service.core.common.constants import (
     standardised_tz_names,
@@ -22,12 +21,11 @@ from exchange_calendar_service.core.common.util import get_enum_key_literal_type
 
 @enum.unique
 class DayTypeBusinessSpecial(str, Enum):
-    SPECIAL_CLOSE = "special close"
     SPECIAL_OPEN = "special open"
+    SPECIAL_CLOSE = "special close"
     WITCHING = "witching"
     MONTHLY_EXPIRY = "monthly expiry"
     MONTH_END = "month end"
-    MSCI_REBAL = "MSCI rebal"
 
 
 @enum.unique
@@ -45,6 +43,19 @@ class DayTypeBusinessRegular(str, Enum):
     REGULAR = "regular"
 
 
+BusinessDay = DayTypeBusinessRegular | DayTypeBusinessSpecial
+BUSINESS_DAYS: tuple[BusinessDay, ...] = tuple(
+    x for x in DayTypeBusinessRegular
+) + tuple(x for x in DayTypeBusinessSpecial)
+
+SpecialDay = DayTypeBusinessSpecial | DayTypeNonBusinessSpecial
+SPECIAL_DAYS: tuple[SpecialDay, ...] = tuple(x for x in DayTypeBusinessSpecial) + tuple(
+    x for x in DayTypeNonBusinessSpecial
+)
+
+Day = BusinessDay | SpecialDay
+DAYS: tuple[Day, ...] = tuple(x for x in BUSINESS_DAYS) + tuple(x for x in SPECIAL_DAYS)
+
 regular_day_type = "regular"
 weekend_day_type = "weekend"
 witching_day_type = "witching"
@@ -53,7 +64,6 @@ month_end_day_type = "month end"
 holiday_day_type = "holiday"
 special_open_day_type = "special open"
 special_close_day_type = "special close"
-msci_rebal_day_type = "MSCI rebal"
 special_day_types = tuple(
     {
         holiday_day_type,
@@ -62,17 +72,9 @@ special_day_types = tuple(
         witching_day_type,
         monthly_expiry_day_type,
         month_end_day_type,
-        msci_rebal_day_type,
     }
 )
 
-# Tuple that contains all members of DayTypeBusinessSpecial and DayTypeNonBusinessSpecial.
-special_day_types2: tuple[Union[DayTypeBusinessSpecial, DayTypeNonBusinessSpecial], ...] = tuple(
-    itertools.chain([x for x in DayTypeBusinessSpecial], [x for x in DayTypeNonBusinessSpecial])
-)
-business_day_types2: tuple[Union[DayTypeBusinessRegular, DayTypeBusinessSpecial], ...] = tuple(
-    itertools.chain([x for x in DayTypeBusinessRegular], [x for x in DayTypeBusinessSpecial])
-)
 
 min_year = dt.date.today().year - 30
 
@@ -85,7 +87,6 @@ class DayTypeBusinessSpecial(str, Enum):
     WITCHING = "witching"
     MONTHLY_EXPIRY = "monthly expiry"
     MONTH_END = "month end"
-    MSCI_REBAL = "MSCI rebal"
 
 
 class DayTypeNonBusinessSpecial(str, Enum):
@@ -94,14 +95,21 @@ class DayTypeNonBusinessSpecial(str, Enum):
 
 class StandardDayClassification(BaseModel, frozen=True):
     date: dt.date
-    type: DayTypeBusinessRegular | DayTypeNonBusinessRegular | DayTypeBusinessSpecial | DayTypeNonBusinessSpecial
+    type: (
+        DayTypeBusinessRegular
+        | DayTypeNonBusinessRegular
+        | DayTypeBusinessSpecial
+        | DayTypeNonBusinessSpecial
+    )
     is_business_day: bool
     name: str | None = None
 
 
 class SpecialOpenCloseDayClassification(StandardDayClassification):
     time: dt.time = None
-    type: Literal[DayTypeBusinessSpecial.SPECIAL_OPEN, DayTypeBusinessSpecial.SPECIAL_CLOSE]
+    type: Literal[
+        DayTypeBusinessSpecial.SPECIAL_OPEN, DayTypeBusinessSpecial.SPECIAL_CLOSE
+    ]
     tz: Union[str, None] = None
 
 
@@ -147,7 +155,11 @@ def parse_timezone(tz: Union[str, ZoneInfo, None], mic: Union[str, None]) -> Zon
             tz = ZoneInfo(tz)
         except Exception:
             # If time zone as entered is not supported, try to convert to Continent/City.
-            candidates = [(region, tz) for region, tz in standardised_tz_names.items() if tz == tz.upper()]
+            candidates = [
+                (region, tz)
+                for region, tz in standardised_tz_names.items()
+                if tz == tz.upper()
+            ]
             if len(candidates) != 1:
                 # more than one match was made, so not sure
                 # which location is referred to. Use default time zone of calendar
@@ -185,7 +197,12 @@ def localize_time(
     else:
         # Note to self: Use tz.localize(datetime.datetime.combine(date, time)) instead of
         # datetime.datetime.combine(date, time, tzinfo=tz) since the latter can lead to incorrect results.
-        return dt.datetime.combine(date, time).replace(tzinfo=tz_input).astimezone(tz_target).time()
+        return (
+            dt.datetime.combine(date, time)
+            .replace(tzinfo=tz_input)
+            .astimezone(tz_target)
+            .time()
+        )
 
 
 def get_router(exchanges_enum: type[Enum]):
@@ -196,10 +213,10 @@ def get_router(exchanges_enum: type[Enum]):
     SupportedMIC = get_enum_key_literal_type(exchanges_enum)
 
     # Type alias for a list that can only contain supported MICs, with examples.
-    SupportedMICs = Annotated[tuple[SupportedMIC,...], Field(examples=[MICS])]
+    SupportedMICs = Annotated[tuple[SupportedMIC, ...], Field(examples=[MICS])]
 
     class StandardDayClassificationWithMics(StandardDayClassification):
-        mics: tuple[SupportedMIC,...]
+        mics: tuple[SupportedMIC, ...]
 
     class SpecialOpenCloseDayClassificationWithMics(
         SpecialOpenCloseDayClassification, StandardDayClassificationWithMics
@@ -244,12 +261,10 @@ def get_router(exchanges_enum: type[Enum]):
         operation_id="api.special_days.get_mic2name_mapping",
         responses={200: {"description": "Dictionary of MICs to exchange names."}},
     )
-    async def get_mic2name_mapping() -> (
-        Annotated[
-            dict[SupportedMIC, str],
-            Field(examples=[{m: exchanges_enum[m].value for m in MICS}]),
-        ]
-    ):
+    async def get_mic2name_mapping() -> Annotated[
+        dict[SupportedMIC, str],
+        Field(examples=[{m: exchanges_enum[m].value for m in MICS}]),
+    ]:
         return {name: value for name, value in exchanges_enum.__members__.items()}
 
     @router.get(
@@ -271,7 +286,9 @@ def get_router(exchanges_enum: type[Enum]):
         },
     )
     @cached(LFUCache(2 * (len(MICS) + 1)))
-    def get_timezone(mic: SupportedMIC = None, standardise: bool = True) -> list[TimeZoneInfo]:
+    def get_timezone(
+        mic: SupportedMIC = None, standardise: bool = True
+    ) -> list[TimeZoneInfo]:
         mics = (mic,) if mic is not None else MICS
         result = []
         for m in mics:
@@ -296,7 +313,11 @@ def get_router(exchanges_enum: type[Enum]):
         "days. Special days may be business days, e.g. special close days, or non-business days, e.g. "
         "holidays.",
         operation_id="api.special_days.get_special_days",
-        responses={200: {"description": "List of special days for the given operating MIC and year."}},
+        responses={
+            200: {
+                "description": "List of special days for the given operating MIC and year."
+            }
+        },
     )
     def get_special_days(
         mic: SupportedMIC, year: Union[int, None] = None, tz: Union[str, None] = None
@@ -321,11 +342,15 @@ def get_router(exchanges_enum: type[Enum]):
         # use a default argument since those are instantiated only once when the method is created. Using a default argument
         # would lead to use of the wrong year if the service rolls over to a new calendar year. Also, to avoid problems
         # with caching in that area, defer to _get_special_days0() and don't wrap this method with a cache itself.
-        return _get_special_days0(mic, year if year is not None else dt.date.today().year, tz)
+        return _get_special_days0(
+            mic, year if year is not None else dt.date.today().year, tz
+        )
 
     # Cache return values. Allow for two times the number of operating MICs.
     @cached(LFUCache(maxsize=2 * len(MICS)))
-    def _get_special_days0(mic: SupportedMIC, year: int, tz: Union[str, None]) -> list[DayClassification]:
+    def _get_special_days0(
+        mic: SupportedMIC, year: int, tz: Union[str, None]
+    ) -> list[DayClassification]:
         """
         Helper method for get_special_days that gets the actual list of special days.
 
@@ -365,7 +390,9 @@ def get_router(exchanges_enum: type[Enum]):
                         "name": name,
                     }
                 )
-                for date, name in c.regular_holidays.holidays(s, e, return_name=True).items()
+                for date, name in c.regular_holidays.holidays(
+                    s, e, return_name=True
+                ).items()
             ]
         )
 
@@ -394,7 +421,9 @@ def get_router(exchanges_enum: type[Enum]):
                             "date": date.to_pydatetime().date(),
                             "type": special_close_day_type,
                             "is_business_day": True,
-                            "time": localize_time(date.to_pydatetime().date(), time, c.tz, tz).isoformat(),
+                            "time": localize_time(
+                                date.to_pydatetime().date(), time, c.tz, tz
+                            ).isoformat(),
                             "tz": tz_str,
                             "name": name,
                         }
@@ -431,7 +460,9 @@ def get_router(exchanges_enum: type[Enum]):
                             "date": date.to_pydatetime().date(),
                             "type": special_open_day_type,
                             "is_business_day": True,
-                            "time": localize_time(date.to_pydatetime().date(), time, c.tz, tz).isoformat(),
+                            "time": localize_time(
+                                date.to_pydatetime().date(), time, c.tz, tz
+                            ).isoformat(),
                             "tz": tz_str,
                             "name": name,
                         }
@@ -470,7 +501,9 @@ def get_router(exchanges_enum: type[Enum]):
                         "name": name,
                     }
                 )
-                for date, name in c.quarterly_expiries.holidays(s, e, return_name=True).items()
+                for date, name in c.quarterly_expiries.holidays(
+                    s, e, return_name=True
+                ).items()
             ]
         )
 
@@ -485,7 +518,9 @@ def get_router(exchanges_enum: type[Enum]):
                         "name": name,
                     }
                 )
-                for date, name in c.monthly_expiries.holidays(s, e, return_name=True).items()
+                for date, name in c.monthly_expiries.holidays(
+                    s, e, return_name=True
+                ).items()
             ]
         )
 
@@ -505,7 +540,9 @@ def get_router(exchanges_enum: type[Enum]):
                             "name": name,
                         }
                     )
-                    for date, name in c.last_trading_days_of_months.holidays(s, e, return_name=True).items()
+                    for date, name in c.last_trading_days_of_months.holidays(
+                        s, e, return_name=True
+                    ).items()
                 ]
                 if x.date not in dates
             ]
@@ -567,7 +604,9 @@ def get_router(exchanges_enum: type[Enum]):
                 )
 
             # Get special days for year.
-            special_days: list[DayClassification] = get_special_days(mic, day.year, tz=tz)
+            special_days: list[DayClassification] = get_special_days(
+                mic, day.year, tz=tz
+            )
 
             # Check for special day.
             for d in special_days:
@@ -575,7 +614,9 @@ def get_router(exchanges_enum: type[Enum]):
                     return d
 
             # If we get here, must be a regular trading day.
-            return StandardDayClassification(date=day, type=DayTypeBusinessRegular.REGULAR, is_business_day=True)
+            return StandardDayClassification(
+                date=day, type=DayTypeBusinessRegular.REGULAR, is_business_day=True
+            )
         else:
             # Classify for all operating MICs.
 
@@ -585,7 +626,9 @@ def get_router(exchanges_enum: type[Enum]):
             r: dict[DayClassification, list[SupportedMIC]] = {}
 
             # Loop over classifications for all operating MICs.
-            for k, v in {mic: classify_day(day, mic=mic, tz=tz) for mic in MICS}.items():
+            for k, v in {
+                mic: classify_day(day, mic=mic, tz=tz) for mic in MICS
+            }.items():
                 # Update entry for classification. Create one if necessary.
                 m = r.get(v, [])
                 m.append(k)
@@ -610,7 +653,9 @@ def get_router(exchanges_enum: type[Enum]):
         "holidays.",
         operation_id="api.special_days.get_next_special_days",
         responses={
-            200: {"description": "List of special days for the given operating MIC and year."},
+            200: {
+                "description": "List of special days for the given operating MIC and year."
+            },
             416: {"description": "Requested range is too large."},
         },
     )
@@ -618,23 +663,23 @@ def get_router(exchanges_enum: type[Enum]):
         day: dt.date = Query(default_factory=lambda: dt.date.today()),
         inclusive: bool = True,
         forward: bool = True,
-        mic: list[SupportedMIC] = Query(default=None),
-        types: tuple[DayTypeBusinessSpecial | DayTypeNonBusinessSpecial, ...] | None = Query(default=special_day_types2),
+        mic: tuple[SupportedMIC, ...] = Query(default=None),
+        types: tuple[SpecialDay, ...] | None = Query(default=SPECIAL_DAYS),
         n: int = 1,
         range: int | None = None,
         tz: str | None = None,
-        exclude_tags: list[str] | None = Query(default=None),
+        exclude_tags: tuple[str, ...] | None = Query(default=None),
     ) -> tuple[list[DayClassificationMap], int]:
         return _get_next_special_days0(
             day,
             inclusive,
             forward,
-            tuple(mic) if mic is not None else mic,
-            tuple(types) if types is not None else special_day_types2,
+            mic,
+            types,
             n,
             range,
             tz,
-            tuple(exclude_tags) if exclude_tags is not None else None,
+            exclude_tags,
         )
 
     @router.get(
@@ -646,7 +691,9 @@ def get_router(exchanges_enum: type[Enum]):
         "days, i.e. any day on which an exchange is open for trading counts as a business day.",
         operation_id="api.special_days.get_next_business_days",
         responses={
-            200: {"description": "List of business days sorted by increasing distance to the given day."},
+            200: {
+                "description": "List of business days sorted by increasing distance to the given day."
+            },
             416: {"description": "Requested range is too large."},
         },
     )
@@ -654,27 +701,32 @@ def get_router(exchanges_enum: type[Enum]):
         day: dt.date = Query(default_factory=lambda: dt.date.today()),
         inclusive: bool = True,
         forward: bool = True,
-        mic: list[SupportedMIC] = Query(default=None),
-        types: tuple[DayTypeBusinessSpecial | DayTypeBusinessRegular, ...] | None = Query(default=business_day_types2),
+        mic: tuple[SupportedMIC, ...] = Query(default=None),
+        types: tuple[BusinessDay, ...] | None = Query(default=BUSINESS_DAYS),
         n: int = 1,
         range: int | None = None,
         tz: str | None = None,
-        exclude_tags: list[str] | None = Query(default=None),
+        exclude_tags: tuple[str, ...] | None = Query(default=None),
     ) -> tuple[list[DayClassificationMap], int]:
         return _get_next_special_days0(
             day,
             inclusive,
             forward,
-            tuple(mic) if mic is not None else mic,
-            tuple(types) if types is not None else business_day_types2,
+            mic,
+            types,
             n,
             range,
             tz,
-            tuple(exclude_tags) if exclude_tags is not None else None,
+            exclude_tags,
         )
 
-    def _get_business_days(mic: str, start: dt.datetime, end: dt.datetime) -> list[dt.date]:
-        result = [x for x in pd.bdate_range(start, end, freq=Context().cache.get(mic).day).date]
+    def _get_business_days(
+        mic: str, start: dt.datetime, end: dt.datetime
+    ) -> list[dt.date]:
+        result = [
+            x
+            for x in pd.bdate_range(start, end, freq=Context().cache.get(mic).day).date
+        ]
         return result
 
     @cached(LFUCache(maxsize=20))
@@ -682,20 +734,23 @@ def get_router(exchanges_enum: type[Enum]):
         day: dt.date,
         inclusive: bool,
         forward: bool,
-        mic: tuple | None,
-        types: tuple | None,
+        mic: tuple[SupportedMIC, ...] | None,
+        types: tuple[Day, ...] | None,
         n: int,
         range: int | None,
         tz: str,
-        exclude_tags: tuple[str] | None,
+        exclude_tags: tuple[str, ...] | None,
     ) -> tuple[list[DayClassificationMap], int]:
         result = dict()
         mics = mic if mic is not None else MICS
-        valid_types = types if types is not None else special_day_types
+        valid_types = types if types is not None else SPECIAL_DAYS
         year = day.year
         needed = n
         range_threshold = (
-            (dt.datetime.combine(date=day, time=dt.time.min) + dt.timedelta(days=(1 if forward else -1) * range)).date()
+            (
+                dt.datetime.combine(date=day, time=dt.time.min)
+                + dt.timedelta(days=(1 if forward else -1) * range)
+            ).date()
             if range is not None
             else None
         )
@@ -710,10 +765,14 @@ def get_router(exchanges_enum: type[Enum]):
 
             for m in mics:
                 # Get all special days for MIC for current year.
-                special_days_for_mic: list[DayClassification] = get_special_days(m, year, tz=tz)
+                special_days_for_mic: list[DayClassification] = get_special_days(
+                    m, year, tz=tz
+                )
 
                 # Filter special days for specified types, e.g. business days only (see valid_types variable)
-                relevant_special_days_for_mic = [x for x in special_days_for_mic if x.type in valid_types]
+                relevant_special_days_for_mic = [
+                    x for x in special_days_for_mic if x.type in valid_types
+                ]
 
                 # If year is the same as that of day, then if forward is true (false), filter out all days that are before
                 # (after) day, respecting the inclusive flag as well.
@@ -726,7 +785,9 @@ def get_router(exchanges_enum: type[Enum]):
                             return x > y or (not inclusive and x == y)
 
                     relevant_special_days_for_mic = [
-                        x for x in relevant_special_days_for_mic if not is_before(x.date, day)
+                        x
+                        for x in relevant_special_days_for_mic
+                        if not is_before(x.date, day)
                     ]
 
                 # If regular business days are to be included, get those as well for year. But exclude those that are also
@@ -734,18 +795,24 @@ def get_router(exchanges_enum: type[Enum]):
                 if regular_day_type in valid_types:
                     # Determine the period for which to get the regular business days.
                     if year == day.year and forward:
-                        start = dt.datetime(year, day.month, day.day) + dt.timedelta(days=0 if inclusive else 1)
+                        start = dt.datetime(year, day.month, day.day) + dt.timedelta(
+                            days=0 if inclusive else 1
+                        )
                     else:
                         start = dt.datetime(year, 1, 1)
 
                     if year == day.year and not forward:
-                        end = dt.datetime(year, day.month, day.day) - dt.timedelta(days=0 if inclusive else 1)
+                        end = dt.datetime(year, day.month, day.day) - dt.timedelta(
+                            days=0 if inclusive else 1
+                        )
                     else:
                         end = dt.datetime(year, 12, 31)
 
                     # Get business days. This may include special days like e.g. early close days which are already included
                     # in special_days_for_mic.
-                    business_days_for_mic: list[dt.date] = _get_business_days(m, start, end)
+                    business_days_for_mic: list[dt.date] = _get_business_days(
+                        m, start, end
+                    )
 
                     # Filter out business days that are already marked as special days.
                     special_days_for_mic_dates = [x.date for x in special_days_for_mic]
@@ -781,22 +848,32 @@ def get_router(exchanges_enum: type[Enum]):
 
             # Remove dates with excluded tags, if specified
             if exclude_tags and len(special_days) > 0:
-                special_days = _remove_days_with_tags(mics=list(mics), special_days=special_days, exclude_tags=exclude_tags)
+                special_days = _remove_days_with_tags(
+                    mics=list(mics),
+                    special_days=special_days,
+                    exclude_tags=exclude_tags,
+                )
 
             # Sort dict by date (key)
-            special_days = OrderedDict(sorted(special_days.items(), key=lambda x: x[0], reverse=not forward))
+            special_days = OrderedDict(
+                sorted(special_days.items(), key=lambda x: x[0], reverse=not forward)
+            )
 
             # Filter out all days that are outside the requested range, maybe.
             if range_threshold is not None:
                 special_days = OrderedDict(
                     filter(
-                        lambda x: x[0] <= range_threshold if forward else x[0] >= range_threshold,
+                        lambda x: x[0] <= range_threshold
+                        if forward
+                        else x[0] >= range_threshold,
                         special_days.items(),
                     )
                 )
 
             # Only retain number of items still needed, maybe.
-            special_days = OrderedDict(itertools.islice(special_days.items(), min(needed, len(special_days))))
+            special_days = OrderedDict(
+                itertools.islice(special_days.items(), min(needed, len(special_days)))
+            )
 
             # Append items to result.
             result.update(special_days)
@@ -810,8 +887,14 @@ def get_router(exchanges_enum: type[Enum]):
             # Check that new year is not already outside range, maybe.
             if range_threshold is not None:
                 # The first day (relative to the search direction) in the new year.
-                first = dt.date(day=1, month=1, year=year) if forward else dt.date(day=31, month=12, year=year)
-                is_outside_range = first > range_threshold if forward else first < range_threshold
+                first = (
+                    dt.date(day=1, month=1, year=year)
+                    if forward
+                    else dt.date(day=31, month=12, year=year)
+                )
+                is_outside_range = (
+                    first > range_threshold if forward else first < range_threshold
+                )
                 if is_outside_range:
                     break
 
@@ -825,13 +908,17 @@ def get_router(exchanges_enum: type[Enum]):
             if isinstance(c, StandardDayClassification):
                 return StandardDayClassificationWithMics(**c.model_dump(), mics=mics)
             elif isinstance(c, SpecialOpenCloseDayClassification):
-                return SpecialOpenCloseDayClassificationWithMics(**c.model_dump(), mics=mics)
+                return SpecialOpenCloseDayClassificationWithMics(
+                    **c.model_dump(), mics=mics
+                )
             else:
                 raise RuntimeError("Unexpected day classification type.")
 
         result = sorted(
             [
-                DayClassificationMap(date=k, classifications=[combine(c, m) for c, m in v.items()])
+                DayClassificationMap(
+                    date=k, classifications=[combine(c, m) for c, m in v.items()]
+                )
                 for k, v in result.items()
             ],
             key=lambda x: x.date,
@@ -876,7 +963,7 @@ def get_router(exchanges_enum: type[Enum]):
             for d, meta in Context().cache.get(m).meta(start=start, end=end).items():
                 if tags_set.intersection(meta.tags):
                     # Convert Timestamp to date for consistent comparison
-                    result.append((d.date() if hasattr(d, 'date') else d, m))
+                    result.append((d.date() if hasattr(d, "date") else d, m))
 
         return result
 
