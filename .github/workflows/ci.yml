@@ -29,11 +29,24 @@ jobs:
     name: Run automated tests.
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
         python-version: [ "3.11", "3.12", "3.13", "3.14" ]
     steps:
+      - name: Get workflow run count for this branch
+        id: run_count
+        run: |
+          COUNT=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${{ github.repository }}/actions/workflows/${{ github.workflow }}/runs?branch=${{ github.ref_name }}&status=completed" \
+            --jq '.total_count')
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
