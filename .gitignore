@@ -137,3 +137,6 @@ dmypy.json
 
 # Ruff linter cache
 .ruff_cache
+
+# Local files.
+*.local.*
