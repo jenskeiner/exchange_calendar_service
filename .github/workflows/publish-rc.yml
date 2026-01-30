@@ -4,46 +4,87 @@ on:
   push:
     branches:
       - 'release/**'
+      - 'hotfix/**'
+      - 'support/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
 
 env:
-  PACKAGE_NAME: <package name>
+  PACKAGE_NAME: exchange-calendar-service
+  MODULE_NAME: exchange_calendar_service
+  PYTHON_VERSION: "3.13"
 
 jobs:
   build-and-publish:
     name: Build and publish release candidate Python distribution to TestPyPI.
     runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write  # Required for trusted publishing.
     steps:
-    - uses: actions/checkout@v4
-    - name: Install poetry.
-      run: pipx install poetry
-    - name: Set up Python 3.11.
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-        cache: 'poetry'
-    - name: Determine RC version number.
-      run: |
-        export RC_VERSION=$(echo ${{ github.ref_name }} | sed -e 's/^release\///')rc${{ github.run_number }}
-        echo "RC version is $RC_VERSION."
-        echo "RC_VERSION=$RC_VERSION" >> $GITHUB_ENV
-    - name: Set poetry package version from tag.
-      run: poetry version ${{ env.RC_VERSION }}
-    - name: Generate requirements.txt.
-      run: poetry export -f requirements.txt --without-hashes > requirements.txt
-    - name: Build package with poetry.
-      run: poetry build
-    - name: Publish package to Test PyPI.
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.TEST_PYPI_PASSWORD }}
-        repository-url: https://test.pypi.org/legacy/
-        skip-existing: true
-    - name: Install from testpypi and import.
-      run: |
-        i=0
-        while (($i<120)) && [[ ! $(curl --max-time 120 -s https://test.pypi.org/pypi/${{ env.PACKAGE_NAME }}/json | jq -r '.releases | keys[]') =~ (^|[[:space:]])${{ env.RC_VERSION }}($|[[:space:]]) ]];\
-          do echo waiting for package to appear in test index, sleeping 5s; sleep 5s; let i++; done
-        pip install --index-url https://test.pypi.org/simple ${{ env.PACKAGE_NAME }}==${{ env.RC_VERSION }} --no-deps
-        pip install -r requirements.txt
-        python -c 'import ${{ env.PACKAGE_NAME }};print(${{ env.PACKAGE_NAME }}.__version__)'
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b # v7
+        with:
+          enable-cache: false  # No cache when building RCs or releases.
+      - name: Set up Python
+        shell: bash
+        run: uv python install ${PYTHON_VERSION}
+      - name: Determine package version.
+        shell: bash
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          export PACKAGE_VERSION=$(echo ${REF_NAME} | sed -e 's/^\(release\|hotfix\|support\)\///')rc${RUN_NUMBER}
+          echo "RC version is $PACKAGE_VERSION."
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+      - name: Build package
+        run: uv build
+      - name: Publish package to Test PyPI.
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+      - name: Test that the package can be installed and imported (Test PyPI).
+        shell: bash
+        run: |
+          i=0
+          max=10
+          exists=0
+          while [ $i -lt $max ] && [ $exists -eq 0 ]; do
+              i=$(expr $i + 1)
+              if curl -f -s https://test.pypi.org/pypi/${PACKAGE_NAME}/json | jq -e ".releases | has(\"${PACKAGE_VERSION}\")" &> /dev/null; then
+                  echo "$i/$max Package has appeared in index."
+                  exists=1
+              else
+                  echo "$i/$max Package has not appeared in index yet. Sleeping 5s."
+                  sleep 5s
+              fi
+          done
+          if [ $exists -ne 0 ]; then
+              sleep 5s
+              i=0
+              max=3
+              while [ $i -lt $max ]; do
+                  if uv run -n --refresh --default-index https://test.pypi.org/simple --index https://pypi.org/simple --index-strategy unsafe-best-match --with "${PACKAGE_NAME}==${PACKAGE_VERSION}" --no-project -- python -c "from importlib.metadata import version;print(version(\"${MODULE_NAME}\"))"; then
+                      exit 0
+                  else
+                      echo "The command failed. Retrying $i/$max."
+                      i=$(expr $i + 1)
+                      sleep 5s
+                  fi
+              done
+              echo "The command failed $i/$max times. Failing the job."
+              exit 1
+          else
+              echo "The package was not found in the package index. Test installation and import failed."
+              exit 1
+          fi
