@@ -46,6 +46,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           RUN_COUNT=$(gh run list --repo ${REPOSITORY} --workflow ${WORKFLOW} --branch ${REF_NAME} --json databaseId --jq "length")
+          echo "RUN_COUNT=$RUN_COUNT"
           echo "count=$RUN_COUNT" >> $GITHUB_OUTPUT
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
