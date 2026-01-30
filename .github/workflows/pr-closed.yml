@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Delete PR package versions.
-        uses: jenskeiner/ghcr-container-repository-cleanup-action@0f7be167d354954ce82f026d4941b6247ed413ae # v1.3.0
+        uses: jenskeiner/ghcr-container-repository-cleanup-action@6822ce86a1dec9d3daf33c400176a4bf5dde5fb8 # v1.3.2
         with:
           include-tags: pr-${{github.event.pull_request.number}}
           token: ${{ secrets.GITHUB_TOKEN }}
