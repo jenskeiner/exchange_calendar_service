@@ -5,12 +5,8 @@ on:
     branches:
       - main
       - develop
-      - 'release/**'
-      - 'hotfix/**'
-      - 'support/**'
   pull_request:
     branches:
-      - main
       - develop
 
 permissions:
