@@ -5,6 +5,9 @@ on:
   pull_request:
     types: [ closed ]
 
+permissions:
+  { }
+
 concurrency:
   group: package-repository
   cancel-in-progress: false
@@ -12,14 +15,15 @@ concurrency:
 jobs:
   # A job to delete package versions (container images) from the GitHub registry related to the PR.
   delete_container_images:
+    name: Delete PR package versions (container images).
     runs-on: ubuntu-latest
 
     permissions:
-      packages: write
+      packages: write  # To be able to delete container images.
 
     steps:
       - name: Delete PR package versions.
-        uses: jenskeiner/ghcr-container-repository-cleanup-action@v1.3.0
+        uses: jenskeiner/ghcr-container-repository-cleanup-action@0f7be167d354954ce82f026d4941b6247ed413ae # v1.3.0
         with:
           include-tags: pr-${{github.event.pull_request.number}}
           token: ${{ secrets.GITHUB_TOKEN }}

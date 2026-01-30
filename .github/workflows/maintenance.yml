@@ -4,7 +4,10 @@ name: Maintenance
 on:
   schedule:
     - cron: '0 0 * * *'
-  workflow_dispatch: {}
+  workflow_dispatch: { }
+
+permissions:
+  { }
 
 concurrency:
   group: package-repository
@@ -13,14 +16,15 @@ concurrency:
 jobs:
   # A job to delete obsolete package versions (container images) from the GitHub registry.
   delete_container_images:
+    name: Delete obsolete package versions (container images).
     runs-on: ubuntu-latest
 
     permissions:
-      packages: write
+      packages: write  # To be able to delete container images.
 
     steps:
       - name: Delete obsolete package versions.
-        uses: jenskeiner/ghcr-container-repository-cleanup-action@v1.3.0
+        uses: jenskeiner/ghcr-container-repository-cleanup-action@0f7be167d354954ce82f026d4941b6247ed413ae # v1.3.0
         with:
           # Don't delete main, master, develop, semantic version tags, and pull request tags.
           exclude-tags: '^(?:main|master|develop|buildcache|\d+(?:\.\d+){0,2}|pr-\d+)$'
