@@ -68,5 +68,8 @@ dev = [
     "httpx>=0.27.0,<1"
 ]
 
+[project.scripts]
+exchange-calendar-service = "exchange_calendar_service.__main__:main"
+
 [tool.pytest.ini_options]
 addopts = "--cov=src/exchange_calendar_service --cov-report=term-missing"
