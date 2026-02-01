@@ -1,6 +1,6 @@
 # Exchange Calendar Service
 
-Exchange Calendar Service is an HTTP web service providing RESTful APIs to query trading and holiday calendars for global stock exchanges. Built on the [exchange_calendars_extensions](https://github.com/jenskeiner/exchange_calendars_extensions) library, it offers a simple interface for accessing exchange calendar data across 100+ exchanges worldwide.
+An HTTP service for querying trading and holiday calendars for global stock exchanges. Built on [exchange_calendars_extensions](https://github.com/jenskeiner/exchange_calendars_extensions), it covers 100+ exchanges worldwide.
 
 ## Features
 
@@ -35,7 +35,7 @@ uv run exchange_calendar-service
 uv run python -m exchange_calendar_service.app
 ```
 
-The service runs on http://localhost:8080 by default. Auto-generated API documentation is available at `/docs`.
+The service runs on http://localhost:8080 by default. Auto-generated API docs are available at `/docs`.
 
 Example: Check if a date is a trading day:
 
@@ -59,7 +59,7 @@ Configuration via environment variables:
 | Variable | Description |
 |----------|-------------|
 | `EXCHANGE_CALENDAR_SERVICE_CHANGES_API_KEY` | Optional API key. Enables the `/update` endpoint for injecting calendar changes. |
-| `EXCHANGE_CALENDAR_SERVICE_INIT` | Optional init function to customize calendars. Format: `module:callable`. Called at startup. |
+| `EXCHANGE_CALENDAR_SERVICE_INIT` | Optional init function to customize calendars. Format: `module:callable`. Invoked on startup. |
 | `EXCHANGE_CALENDAR_SERVICE_EXCHANGES` | Optional dict of supported exchanges. Format: `{"XLON": "XLON", "XNYS": "XNYS"}`. Default: all exchanges. |
 
 Examples:
@@ -340,7 +340,7 @@ See `customize/xtae.py` for a complete example that extends the Tel Aviv Stock E
 
 ## Development
 
-The project requires **Python 3.11+**.
+The project requires Python 3.11 or later.
 
 ### Testing
 
@@ -350,7 +350,7 @@ Run the full test suite with coverage:
 uv run pytest -v tests/ --cov=exchange_calendar_service --cov-fail-under=80
 ```
 
-Coverage gate: **80% minimum**.
+Coverage gate: 80% minimum.
 
 ### Pre-commit Hooks
 
@@ -364,7 +364,7 @@ The configured hooks run `pyupgrade` (targeting Python 3.11+), `ruff` (linter), 
 
 ## Deployment
 
-The service runs on **uvicorn** and is containerized with Docker.
+The service uses uvicorn. A Dockerfile is provided.
 
 ### Building the Docker Image
 
@@ -391,7 +391,7 @@ docker run -p 8080:8080 \
   exchange-calendar-service
 ```
 
-The service listens on port **8080**.
+The service listens on port 8080.
 
 ## License
 
