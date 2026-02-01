@@ -37,7 +37,7 @@ def init(settings):
         settings = Settings(
             changes_api_key=None,
             init="test_init_module:init",
-            exchanges={"XNYS": "XNYS"},
+            exchanges=("XNYS",),
         )
 
         # Create app - init should be called
@@ -60,7 +60,7 @@ def init(settings):
         settings = Settings(
             changes_api_key=None,
             init="test_init_module_only",
-            exchanges={"XNYS": "XNYS"},
+            exchanges=("XNYS",),
         )
 
         # Should not raise - just imports the module
@@ -77,7 +77,7 @@ def init(settings):
         settings = Settings(
             changes_api_key=None,
             init="test_init_not_callable:init",
-            exchanges={"XNYS": "XNYS"},
+            exchanges=("XNYS",),
         )
 
         with pytest.raises(ValueError, match="is not callable"):
@@ -102,7 +102,7 @@ init = InitCallable()
         settings = Settings(
             changes_api_key=None,
             init="test_init_not_function:init",
-            exchanges={"XNYS": "XNYS"},
+            exchanges=("XNYS",),
         )
 
         with pytest.raises(ValueError, match="is not a function"):
@@ -124,7 +124,7 @@ def init(settings, extra_arg):  # Too many args
         settings = Settings(
             changes_api_key=None,
             init="test_init_wrong_signature:init",
-            exchanges={"XNYS": "XNYS"},
+            exchanges=("XNYS",),
         )
 
         with pytest.raises(ValueError, match="does not have exactly one argument"):
@@ -145,7 +145,7 @@ def init():  # No args
         settings = Settings(
             changes_api_key=None,
             init="test_init_no_args:init",
-            exchanges={"XNYS": "XNYS"},
+            exchanges=("XNYS",),
         )
 
         with pytest.raises(ValueError, match="does not have exactly one argument"):
@@ -166,7 +166,7 @@ def init(settings, another):  # Two args
         settings = Settings(
             changes_api_key=None,
             init="test_init_two_args:init",
-            exchanges={"XNYS": "XNYS"},
+            exchanges=("XNYS",),
         )
 
         with pytest.raises(ValueError, match="does not have exactly one argument"):
@@ -178,7 +178,7 @@ def init(settings, another):  # Two args
         settings = Settings(
             changes_api_key=None,
             init=None,
-            exchanges={"XNYS": "XNYS"},
+            exchanges=("XNYS",),
         )
 
         # Should not raise
@@ -253,7 +253,7 @@ class TestUpdateEndpoint:
         settings = Settings(
             changes_api_key=None,
             init=None,
-            exchanges={"XNYS": "XNYS"},
+            exchanges=("XNYS",),
         )
         client = TestClient(app(settings))
 

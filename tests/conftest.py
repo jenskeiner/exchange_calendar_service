@@ -1,11 +1,11 @@
 import pytest
 from fastapi.testclient import TestClient
 
-_test_exchanges = {
-    "XAMS": "Euronext Amsterdam",
-    "XLON": "London Stock Exchange",
-    "XSWX": "SIX Swiss Exchange",
-}
+_test_exchanges = (
+    "XAMS",
+    "XLON",
+    "XSWX",
+)
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def test_settings():
     )
 
     previous = get_settings(create=False)
-    settings = Settings(changes_api_key="test", init=None, exchanges=_test_exchanges)
+    settings = Settings(changes_api_key="test", init=None, exchanges=tuple(_test_exchanges))
     set_settings(settings)
     yield settings
     set_settings(previous)

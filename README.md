@@ -100,21 +100,32 @@ Result:
 
 ## Configuration
 
-Configuration via environment variables:
+Configuration can be done via an `.env` file and/or via environment variables, with the environment variables taking
+precedence. Environment variables must use the prefix `EXCHANGE_CALENDAR_SERVICE__` to map to the correct setting.
 
-| Variable                                    | Description                                                                                               |
-|---------------------------------------------|-----------------------------------------------------------------------------------------------------------|
-| `EXCHANGE_CALENDAR_SERVICE_CHANGES_API_KEY` | Optional API key. Enables the `/update` endpoint for injecting calendar changes.                          |
-| `EXCHANGE_CALENDAR_SERVICE_INIT`            | Optional init function to customize calendars. Format: `module:callable`. Invoked on startup.             |
-| `EXCHANGE_CALENDAR_SERVICE_EXCHANGES`       | Optional dict of supported exchanges. Format: `{"XLON": "XLON", "XNYS": "XNYS"}`. Default: all exchanges. |
+Here's an example `.env` file:
 
-Examples:
+```env
+exchanges='["XLON", "XNYS"]'  # Limit the service to these calendars, identified by their MIC codes.
+init=myapp:customize_calendars  # Set to a callable to customize calendars on startup. Format: `module:callable`.
+changes_api_key=secret-key  # Set to enable the `/update` endpoint for injecting calendar changes.
+```
+
+And here's the corresponding environment variables to the same effect:
 
 ```bash
-export EXCHANGE_CALENDAR_SERVICE_CHANGES_API_KEY="secret-key"
-export EXCHANGE_CALENDAR_SERVICE_INIT="myapp:customize_calendars"
-export EXCHANGE_CALENDAR_SERVICE_EXCHANGES='{"XLON": "XLON", "XNYS": "XNYS"}'
+EXCHANGE_CALENDAR_SERVICE_EXCHANGES='["XLON", "XNYS"]'
+EXCHANGE_CALENDAR_SERVICE_INIT=myapp:customize_calendars
+EXCHANGE_CALENDAR_SERVICE_CHANGES_API_KEY=secret-key
 ```
+
+### Limiting the supported exchanges
+
+By default, the service will support all available exchanges. In some situations, it may be convenient to limit the
+supported exchanges to a subset of the available exchanges. This can be done via the `exchanges` setting, which is a
+JSON array of MIC codes.
+
+### Customizations
 
 ## API Reference
 
@@ -474,7 +485,7 @@ Pass configuration via `-e` flags:
 ```bash
 docker run -p 8080:8080 \
   -e EXCHANGE_CALENDAR_SERVICE_CHANGES_API_KEY=your-key \
-  -e EXCHANGE_CALENDAR_SERVICE_EXCHANGES='{"XLON": "XLON"}' \
+  -e EXCHANGE_CALENDAR_SERVICE_EXCHANGES='["XLON"]' \
   exchange-calendar-service
 ```
 

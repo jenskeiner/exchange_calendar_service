@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     init: str | None = None
 
     # The available exchanges.
-    exchanges: dict[str, str] | None = None
+    exchanges: tuple[str, ...] | None = None
 
 
 _instance: Settings | None = None

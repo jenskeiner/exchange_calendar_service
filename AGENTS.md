@@ -23,10 +23,8 @@ Prefer setting environment variables when running the app to change defaults set
 - EXCHANGE_CALENDAR_SERVICE_INIT: Optional init function. If set, must be a string pointing to a callable, e.g.
   `customize:init`. that will be called when the app starts up. Can be used to modify existing calendars or to add new
   ones.
-- EXCHANGE_CALENDAR_SERVICE_EXCHANGES: Optional dictionary of supported exchanges. If set, must be a dictionary of
-  string mapping to strings. Used to build an enum class of supported exchanges. Keys become enum member names, values
-  become enum member values and must be valid exchange calendar names, e.g. {"XLON": "XLON"}. Default is to use all
-  exchange calendars.
+- EXCHANGE_CALENDAR_SERVICE_EXCHANGES: Optional list/tuple of supported exchange MICs. If set, must be a JSON array
+  of MIC codes, e.g. ["XLON", "XNYS"]. Default is to use all exchange calendars.
 
 ## Conventions
 

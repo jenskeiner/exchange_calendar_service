@@ -20,14 +20,14 @@ class TestVenues:
         response = client.get("/v1/mics")
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "application/json"
-        assert response.json() == [x for x in test_settings.exchanges.keys()]
+        assert response.json() == [x for x in test_settings.exchanges]
 
     def test_get_mic2name(self, client, test_settings):
         """This test verifies that the GET /v1/mic2name endpoint returns a dictionary mapping MICs to venue names."""
         response = client.get("/v1/mic2name")
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "application/json"
-        assert response.json() == {x: y for x, y in test_settings.exchanges.items()}
+        assert response.json() == {x: x for x in test_settings.exchanges}
 
     def test_get_timezones(self, client, test_settings):
         """This test verifies that the GET /v1/timezones endpoint returns the correct timezone or standard time for
@@ -47,7 +47,7 @@ class TestVenues:
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "application/json"
         assert response.json() == [
-            {"mic": x, "tz": mic2tz[x]} for x in test_settings.exchanges.keys()
+            {"mic": x, "tz": mic2tz[x]} for x in test_settings.exchanges
         ]
 
         # Get standard time for one exchange.
@@ -71,7 +71,7 @@ class TestVenues:
         assert response.status_code == HTTPStatus.OK
         assert response.headers["content-type"] == "application/json"
         assert response.json() == [
-            {"mic": x, "tz": mic2standard_time[x]} for x in test_settings.exchanges.keys()
+            {"mic": x, "tz": mic2standard_time[x]} for x in test_settings.exchanges
         ]
 
         # Get timezone for one exchange.

@@ -60,13 +60,13 @@ def app(_settings: Settings | None = None) -> FastAPI:
             init(settings)
 
     if settings.exchanges is None:
-        settings.exchanges = {
-            x: x for x in ec.calendar_utils.get_calendar_names(include_aliases=False)
-        }
+        settings.exchanges = tuple(
+            ec.calendar_utils.get_calendar_names(include_aliases=False)
+        )
 
-    # From the contents of _settings.exchanges, programmatically create dynamic Enum class with the name ExchangeEnum.
-    # The keys of _settings.exchanges become the enum member keys/names and the values become the enum member values.
-    Exchanges: type[Enum] = Enum("ExchangeEnum", settings.exchanges)
+    # From the contents of settings.exchanges, programmatically create dynamic Enum class with the name ExchangeEnum.
+    # The MICs become both the enum member names and the enum member values.
+    Exchanges: type[Enum] = Enum("ExchangeEnum", {x: x for x in settings.exchanges})
 
     # Apply extensions to exchange calendars.
     ecx_core.apply_extensions()
