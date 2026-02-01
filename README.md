@@ -1,47 +1,93 @@
 # Exchange Calendar Service
 
-An HTTP service for querying trading and holiday calendars for global stock exchanges. Built on [exchange_calendars_extensions](https://github.com/jenskeiner/exchange_calendars_extensions), it covers 100+ exchanges worldwide.
+[![PyPI](https://img.shields.io/pypi/v/exchange-calendar-service)](https://pypi.org/project/exchange-calendar-service/)
+[![Python Support](https://img.shields.io/pypi/pyversions/exchange_calendar_service)](https://pypi.org/project/exchange-calendar-service/)
+[![PyPI Downloads](https://img.shields.io/pypi/dd/exchange-calendar-service)](https://pypi.org/project/exchange-calendar-service/)
+
+An HTTP service for querying trading calendars for stock exchanges. Built
+on [exchange_calendars](https://github.com/gerrymanoim/exchange_calendars) and
+[exchange_calendars_extensions](https://github.com/jenskeiner/exchange_calendars_extensions), it covers 60+ exchanges
+worldwide.
+
+Requires Python 3.11 or later.
 
 ## Features
 
 - RESTful API for exchange calendar queries
-- Support for 100+ global exchanges via MIC codes
-- Holiday and special trading day queries
-- Business day classification and date arithmetic
+- Support for 60+ global exchanges
+- Query holidays, special open/close trading days, witching days and more
 - Timezone-aware operations
-- Custom calendar support via init hooks
+- Support for custom calendars and calendar modifications via init hooks
 - Efficient caching with configurable TTL
-- Docker containerization support
+- Docker image available for easy deployment
 
 ## Installation
 
-```bash
-pip install exchange-calendar-service
-```
+### As a dependency
+
+The package is available on [PyPI](https://pypi.org/project/exchange-calendar-service/) and can be added as a dependency
+to your project via [uv](https://github.com/astral-sh/uv) or any other suitable package/dependency management tool.
 
 ```bash
-uv pip install exchange-calendar-service
+uv add exchange-calendar-service
 ```
 
-Requires Python 3.11 or later.
+### As a tool
+
+If you are primarily interested in running the service as a tool and without any customization, you can use
+[uv](https://github.com/astral-sh/uv)'s tool support
+
+```bash
+uvx exchange-calendar-service
+```
+
+or install via [pipx](https://github.com/pypa/pipx)
+
+```bash
+pipx install exchange-calendar-service
+```
 
 ## Quick Start
 
-Start the service:
+With the package installed in a virtual environment (and with that environment activated), you can start the service
+as a script
+
+```bash
+exchange_calendar-service
+```
+
+Alternatively, you invoke the Python module directly:
+
+```bash
+python -m exchange_calendar_service
+```
+
+or
 
 ```bash
 uv run exchange_calendar-service
-# or
-uv run python -m exchange_calendar_service.app
 ```
 
-The service runs on http://localhost:8080 by default. Auto-generated API docs are available at `/docs`.
+This will start the service via [Uvicorn](https://uvicorn.dev) on http://localhost:8080 by default. See
+http://localhost:8080/docs for auto-generated API docs.
 
-Example: Check if a date is a trading day:
+If you're using a different [ASGI](https://asgi.readthedocs.io/en/latest/) web server, point it to the module
+`exchange_calendar_service:app` which is a function that returns an ASGI application.
+
+## Examples
+
+Assuming the service is running on http://localhost:8080, here are some examples using [curl](https://curl.se). Note
+that you can also conveniently use the auto-generated API docs at http://localhost:8080/docs to try out the endpoints.
+
+### Check if a date is a trading day:
+
+Request:
 
 ```bash
 curl "http://localhost:8080/v1/classify_day?day=2024-12-25&mic=XLON"
 ```
+
+Result:
 
 ```json
 {
@@ -56,11 +102,11 @@ curl "http://localhost:8080/v1/classify_day?day=2024-12-25&mic=XLON"
 
 Configuration via environment variables:
 
-| Variable | Description |
-|----------|-------------|
-| `EXCHANGE_CALENDAR_SERVICE_CHANGES_API_KEY` | Optional API key. Enables the `/update` endpoint for injecting calendar changes. |
-| `EXCHANGE_CALENDAR_SERVICE_INIT` | Optional init function to customize calendars. Format: `module:callable`. Invoked on startup. |
-| `EXCHANGE_CALENDAR_SERVICE_EXCHANGES` | Optional dict of supported exchanges. Format: `{"XLON": "XLON", "XNYS": "XNYS"}`. Default: all exchanges. |
+| Variable                                    | Description                                                                                               |
+|---------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| `EXCHANGE_CALENDAR_SERVICE_CHANGES_API_KEY` | Optional API key. Enables the `/update` endpoint for injecting calendar changes.                          |
+| `EXCHANGE_CALENDAR_SERVICE_INIT`            | Optional init function to customize calendars. Format: `module:callable`. Invoked on startup.             |
+| `EXCHANGE_CALENDAR_SERVICE_EXCHANGES`       | Optional dict of supported exchanges. Format: `{"XLON": "XLON", "XNYS": "XNYS"}`. Default: all exchanges. |
 
 Examples:
 
@@ -81,12 +127,17 @@ Get list of valid MIC codes for querying exchanges.
 **Query Parameters:** None
 
 **Example:**
+
 ```bash
 curl http://localhost:8080/v1/mics
 ```
 
 ```json
-["XAMS", "XLON", "XSWX"]
+[
+  "XAMS",
+  "XLON",
+  "XSWX"
+]
 ```
 
 ### GET /mic2name
@@ -96,12 +147,17 @@ Get mapping of MIC codes to exchange names.
 **Query Parameters:** None
 
 **Example:**
+
 ```bash
 curl http://localhost:8080/v1/mic2name
 ```
 
 ```json
-{"XAMS": "XAMS", "XLON": "XLON", "XSWX": "XSWX"}
+{
+  "XAMS": "XAMS",
+  "XLON": "XLON",
+  "XSWX": "XSWX"
+}
 ```
 
 ### GET /timezone
@@ -109,16 +165,24 @@ curl http://localhost:8080/v1/mic2name
 Get timezone for exchanges.
 
 **Query Parameters:**
+
 - `mic` (optional) - Single MIC to query. If omitted, returns all exchanges.
-- `standardise` (optional, default: `true`) - Return short timezone name (e.g., `CET`) or full IANA name (e.g., `Europe/Berlin`)
+- `standardise` (optional, default: `true`) - Return short timezone name (e.g., `CET`) or full IANA name (e.g.,
+  `Europe/Berlin`)
 
 **Example:**
+
 ```bash
 curl "http://localhost:8080/v1/timezone?mic=XLON&standardise=true"
 ```
 
 ```json
-[{"mic": "XLON", "tz": "WET"}]
+[
+  {
+    "mic": "XLON",
+    "tz": "WET"
+  }
+]
 ```
 
 ### GET /special_days
@@ -126,11 +190,13 @@ curl "http://localhost:8080/v1/timezone?mic=XLON&standardise=true"
 Get holidays, special opens/closes, and expiry dates for an exchange.
 
 **Query Parameters:**
+
 - `mic` (required) - MIC code
 - `year` (optional) - Year to query. Defaults to current year.
 - `tz` (optional) - Timezone for special open/close times (e.g., `CET`, `Europe/London`)
 
 **Example:**
+
 ```bash
 curl "http://localhost:8080/v1/special_days?mic=XLON&year=2024"
 ```
@@ -171,11 +237,13 @@ curl "http://localhost:8080/v1/special_days?mic=XLON&year=2024"
 Classify a specific day type for one or all exchanges.
 
 **Query Parameters:**
+
 - `day` (required) - Date in ISO format (e.g., `2024-12-25`)
 - `mic` (optional) - Single MIC to query. If omitted, returns all exchanges grouped by classification.
 - `tz` (optional) - Timezone for special open/close times
 
 **Example (single MIC):**
+
 ```bash
 curl "http://localhost:8080/v1/classify_day?day=2024-12-25&mic=XLON"
 ```
@@ -190,6 +258,7 @@ curl "http://localhost:8080/v1/classify_day?day=2024-12-25&mic=XLON"
 ```
 
 **Example (all exchanges):**
+
 ```bash
 curl "http://localhost:8080/v1/classify_day?day=2024-12-25"
 ```
@@ -201,13 +270,17 @@ curl "http://localhost:8080/v1/classify_day?day=2024-12-25"
     "type": "holiday",
     "is_business_day": false,
     "name": "Christmas Day",
-    "mics": ["XLON"]
+    "mics": [
+      "XLON"
+    ]
   },
   {
     "date": "2024-12-25",
     "type": "regular",
     "is_business_day": true,
-    "mics": ["XAMS"]
+    "mics": [
+      "XAMS"
+    ]
   }
 ]
 ```
@@ -217,6 +290,7 @@ curl "http://localhost:8080/v1/classify_day?day=2024-12-25"
 Get next or previous special days relative to a reference date.
 
 **Query Parameters:**
+
 - `day` (optional, default: today) - Reference date in ISO format
 - `forward` (optional, default: `true`) - Search direction (`true` for forward, `false` for backward)
 - `n` (optional, default: `1`) - Number of days to return
@@ -227,6 +301,7 @@ Get next or previous special days relative to a reference date.
 - `exclude_tags` (optional, repeatable) - Exclude dates with specified tags
 
 **Example:**
+
 ```bash
 curl "http://localhost:8080/v1/next_special_days?day=2024-12-20&forward=true&n=3&mic=XLON"
 ```
@@ -242,7 +317,9 @@ curl "http://localhost:8080/v1/next_special_days?day=2024-12-20&forward=true&n=3
           "type": "holiday",
           "is_business_day": false,
           "name": "Christmas Day",
-          "mics": ["XLON"]
+          "mics": [
+            "XLON"
+          ]
         }
       ]
     }
@@ -258,6 +335,7 @@ Returns a tuple of `[results, status]` where status is `200` on success or `416`
 Get next or previous business days relative to a reference date.
 
 **Query Parameters:**
+
 - `day` (optional, default: today) - Reference date in ISO format
 - `forward` (optional, default: `true`) - Search direction
 - `n` (optional, default: `1`) - Number of days to return
@@ -268,6 +346,7 @@ Get next or previous business days relative to a reference date.
 - `exclude_tags` (optional, repeatable) - Exclude dates with specified tags
 
 **Example:**
+
 ```bash
 curl "http://localhost:8080/v1/next_business_days?day=2024-12-20&forward=true&n=5"
 ```
@@ -282,7 +361,10 @@ curl "http://localhost:8080/v1/next_business_days?day=2024-12-20&forward=true&n=
           "date": "2024-12-20",
           "type": "regular",
           "is_business_day": true,
-          "mics": ["XAMS", "XLON"]
+          "mics": [
+            "XAMS",
+            "XLON"
+          ]
         }
       ]
     }
@@ -295,11 +377,14 @@ Business days include regular trading days and special open/close days. Returns 
 
 ## Customization
 
-The service can be customized at startup by providing an init function via the `EXCHANGE_CALENDAR_SERVICE_INIT` environment variable. This function receives the `Settings` instance and can modify calendars, register aliases, or add new ones.
+The service can be customized at startup by providing an init function via the `EXCHANGE_CALENDAR_SERVICE_INIT`
+environment variable. This function receives the `Settings` instance and can modify calendars, register aliases, or add
+new ones.
 
 ### Setting the Init Function
 
-Set `EXCHANGE_CALENDAR_SERVICE_INIT` to a module path pointing to a callable, in the format `module:callable`. The callable must accept one argument (`Settings`).
+Set `EXCHANGE_CALENDAR_SERVICE_INIT` to a module path pointing to a callable, in the format `module:callable`. The
+callable must accept one argument (`Settings`).
 
 ```bash
 export EXCHANGE_CALENDAR_SERVICE_INIT="customize:init"
@@ -330,13 +415,15 @@ def init(settings: Settings) -> None:
 ```
 
 The init function can:
+
 - **Replace calendars** - Use `register_calendar_type(name, calendar_class, force=True)`
 - **Register aliases** - Use `register_calendar_alias(alias, target_calendar)`
 - **Add new calendars** - Use `register_calendar_type(name, calendar_class)`
 
 ### Extended Example
 
-See `customize/xtae.py` for a complete example that extends the Tel Aviv Stock Exchange (`XTAE`) calendar with custom holiday handling logic.
+See `customize/xtae.py` for a complete example that extends the Tel Aviv Stock Exchange (`XTAE`) calendar with custom
+holiday handling logic.
 
 ## Development
 
