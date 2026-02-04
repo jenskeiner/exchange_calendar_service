@@ -115,7 +115,7 @@ And here's the corresponding environment variables to the same effect:
 
 ```bash
 EXCHANGE_CALENDAR_SERVICE_EXCHANGES='["XLON", "XNYS"]'
-EXCHANGE_CALENDAR_SERVICE_INIT=myapp:customize_calendars
+EXCHANGE_CALENDAR_SERVICE_INIT=customize:init
 EXCHANGE_CALENDAR_SERVICE_CHANGES_API_KEY=secret-key
 ```
 
@@ -126,6 +126,21 @@ supported exchanges to a subset of the available exchanges. This can be done via
 JSON array of MIC codes.
 
 ### Customizations
+
+Customizations can be done via the `init` setting, which is a string pointing to a callable, e.g. `customize:init`. On
+startup, the service will import the callable and invoke it with the settings object as an argument.
+
+This can be used to apply any customizations to the calendars, e.g. adding new calendars, removing existing calendars,
+registering calendar aliases, et cetera. See the [customization example](#customization-example).
+
+### Changes API
+
+When enabled, the service will expose an `/update` endpoint that allows clients to inject calendar changes. The
+endpoint is protected by an API key, which must be provided via the `changes_api_key` setting. Clients must provide
+the API key in the `X-API-Key` request header.
+
+The Changes API provides a way to dynamically update calendars. This can be useful if an ad-hoc change is needed since
+the underlying calendar does not (yet) reflect the change.
 
 ## API Reference
 

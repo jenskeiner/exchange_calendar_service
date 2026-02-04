@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-env-plus>=1.0.0"]
+requires = ["hatchling", "hatch-env-plus>=1.0.1"]
 build-backend = "hatchling.build"
 
 [project]
@@ -28,15 +28,18 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "exchange-calendars-extensions>=0.8.4,<1",
+    "exchange-calendars-extensions>=0.9.2,<1",
     "fastapi>0,<1",
     "pyyaml>=6,<7",
     "pydantic-settings>=2,<3",
     "myers>1,<2",
     "cachetools>6,<7",
     "pytz",
-    "uvicorn>=0.40.0,<1"
+    "uvicorn>=0.40.0,<1",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [project.urls]
 homepage = "https://github.com/jenskeiner/exchange_calendar_service/"

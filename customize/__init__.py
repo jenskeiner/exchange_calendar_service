@@ -18,7 +18,7 @@ def init(settings: Settings):
     _ = XTAEExchangeCalendar
 
     # Replace XTAE calendar with custom version.
-    ec.calendar_utils.register_calendar_type("XTAE", XTAEExchangeCalendar, force=True)
+    # ec.calendar_utils.register_calendar_type("XTAE", XTAEExchangeCalendar, force=True)
 
     # Add completely new calendar.
     ec.calendar_utils.register_calendar_type("FOOO", XTAEExchangeCalendar)

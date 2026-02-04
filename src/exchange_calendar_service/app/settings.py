@@ -8,9 +8,7 @@ class Settings(BaseSettings):
         env_file=".env",
     )
 
-    changes_api_key: str | None = None
-
-    # The optional full name of callable.
+    # The optional full name of a callable.
     init: str | None = None
 
     # The available exchanges.
@@ -20,10 +18,10 @@ class Settings(BaseSettings):
 _instance: Settings | None = None
 
 
-def get_settings(create: bool = True) -> Settings | None:
+def get_settings() -> Settings:
     """Get the current settings instance."""
     global _instance
-    if _instance is None and create:
+    if _instance is None:
         _instance = Settings()
     return _instance
 

@@ -1,6 +1,9 @@
+from bisect import bisect_right
 from collections.abc import Iterable
+from typing import TypeVar
 
 import exchange_calendars as ec
+import pandas as pd
 
 
 class ExchangeCalendarProxy:
@@ -89,3 +92,52 @@ class ExchangeCalendars:
 
     def items(self):
         return self._proxies.items()
+
+
+T = TypeVar("T")
+
+
+Interval = tuple[pd.Timestamp, T]
+
+
+def find_interval(
+    intervals: tuple[Interval[T], ...], timestamp: pd.Timestamp
+) -> Interval[T]:
+    """
+    Find the interval containing the given timestamp using binary search.
+
+    The intervals form a partition of time with no gaps. Each interval is
+    a tuple of (start_date, value) where start_date is inclusive and the
+    interval extends to (but does not include) the next interval's start_date.
+    The first interval has None as start_date, representing (-infinity, ...).
+
+    Parameters
+    ----------
+    intervals : tuple[Interval[T], ...]
+        A tuple of (start_date, value) tuples sorted by start_date in ascending
+        order, with the first start_date being None.
+    timestamp : pd.Timestamp
+        The timestamp to locate within the intervals.
+
+    Returns
+    -------
+    Interval[T]
+        The (start_date, value) tuple for the interval containing the timestamp.
+    """
+    if not intervals:
+        raise ValueError("intervals must not be empty")
+
+    # Extract start dates, replacing None with a sentinel far in the past
+    # Using pd.Timestamp.min as the sentinel for binary search
+    start_dates = [d for d, _ in intervals]
+
+    # Find insertion point: first index where start_date > timestamp
+    # The interval we want is at idx - 1 (or len - 1 if idx == len)
+    idx = bisect_right(start_dates, timestamp)
+
+    if idx == 0:
+        # Timestamp is before all intervals (only possible if first interval
+        # doesn't start with None, which violates the invariant)
+        raise ValueError(f"Timestamp {timestamp} is before all intervals")
+
+    return intervals[idx - 1]

@@ -1,24 +1,20 @@
 import pytest
 from fastapi.testclient import TestClient
 
-_test_exchanges = (
-    "XAMS",
-    "XLON",
-    "XSWX",
-)
+_test_exchanges = ("XAMS", "XLON", "XSWX", "BVMF")
 
 
 @pytest.fixture
 def test_settings():
     """Create test settings with a limited set of exchanges."""
+    import exchange_calendar_service.app.settings
     from exchange_calendar_service.app.settings import (
         Settings,
-        get_settings,
         set_settings,
     )
 
-    previous = get_settings(create=False)
-    settings = Settings(changes_api_key="test", init=None, exchanges=tuple(_test_exchanges))
+    previous = exchange_calendar_service.app.settings._instance
+    settings = Settings(init=None, exchanges=tuple(_test_exchanges))
     set_settings(settings)
     yield settings
     set_settings(previous)
@@ -39,8 +35,6 @@ def tagged_dates(client):
     Adds tags to specific dates and cleans them up after the test.
     Uses the update endpoint to add metadata tags.
     """
-    from exchange_calendar_service.app.settings import get_settings
-
     # Set up tags on specific dates
     tags_to_add = {
         "XLON": {
@@ -65,6 +59,7 @@ def tagged_dates(client):
 
     # Clear cache so tags are reflected
     from exchange_calendar_service.core.common.context import Context
+
     for mic in tags_to_add.keys():
         if Context().cache:
             Context().cache.refresh(mic)
