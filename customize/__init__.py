@@ -1,10 +1,6 @@
-from typing import TYPE_CHECKING
-
 import exchange_calendars as ec
 
-if TYPE_CHECKING:
-    from exchange_calendar_service.app.settings import Settings
-
+from exchange_calendar_service.app.settings import Settings
 
 # A custom version of the XTAE exchange calendar, where Sundays were always non-business days.
 from .xtae import XTAEExchangeCalendar
