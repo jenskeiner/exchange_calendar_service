@@ -1,8 +1,38 @@
 from collections.abc import Iterable
 
 import exchange_calendars as ec
-from cachetools import cached, LFUCache
+import pandas as pd
+from cachetools import LFUCache, cached
 from exchange_calendars_extensions.core import ExtendedExchangeCalendar
+from exchange_calendars_extensions.core.util import get_weekmask_periods
+
+REGULAR_SLOTS = (
+    "day",
+    "holidays_all",
+    "regular_holidays",
+    "adhoc_holidays",
+    "special_opens_all",
+    "special_opens",
+    "special_opens_adhoc",
+    "special_closes_all",
+    "special_closes",
+    "special_closes_adhoc",
+    "quarterly_expiries",
+    "monthly_expiries",
+    "last_trading_days_of_months",
+    "tz",
+    "open_times",
+    "close_times",
+    "weekmask",
+    "special_weekmasks",
+    "meta",
+    "weekend_days",
+    "week_days",
+)
+
+EXTRA_SLOTS = ("open_times0", "close_times0", "weekmask_periods")
+
+SLOTS = REGULAR_SLOTS + EXTRA_SLOTS
 
 
 class ExtendedExchangeCalendarWrapper:
@@ -12,28 +42,25 @@ class ExtendedExchangeCalendarWrapper:
     collected when no longer needed."""
 
     # The names of the properties to expose.
-    __slots__ = (
-        "day",
-        "regular_holidays",
-        "adhoc_holidays",
-        "special_opens",
-        "special_opens_adhoc",
-        "special_closes",
-        "special_closes_adhoc",
-        "quarterly_expiries",
-        "monthly_expiries",
-        "last_trading_days_of_months",
-        "tz",
-        "open_times",
-        "close_times",
-        "weekmask",
-        "meta",
-    )
+    __slots__ = SLOTS
 
     def __init__(self, exchange_calendar: ExtendedExchangeCalendar):
         # Copy all the relevant properties from wrapped object to this one.
-        for prop in self.__slots__:
-            setattr(self, prop, getattr(exchange_calendar, prop))
+        for prop in REGULAR_SLOTS:
+            if hasattr(exchange_calendar, prop):
+                setattr(self, prop, getattr(exchange_calendar, prop))
+
+        self.open_times0 = tuple(
+            (d if d is not None else pd.Timestamp.min, t)
+            for d, t in exchange_calendar.open_times
+        )
+
+        self.close_times0 = tuple(
+            (d if d is not None else pd.Timestamp.min, t)
+            for d, t in exchange_calendar.close_times
+        )
+
+        self.weekmask_periods = get_weekmask_periods(exchange_calendar)
 
 
 class ExchangeCalendarCache:

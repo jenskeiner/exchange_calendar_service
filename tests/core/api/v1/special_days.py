@@ -1,1732 +1,2139 @@
 import datetime as dt
 
 from exchange_calendar_service.app.api.v1.endpoints import (
-    DayTypeBusinessSpecial,
-    DayTypeNonBusinessSpecial,
-    SpecialOpenCloseDayClassification,
-    StandardDayClassification,
+    BusinessDay,
+    NonBusinessDay,
+    Session,
+    Tags,
 )
 
+# XAMS: 09:00-17:30
 xams_2021 = [
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 1, 1),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="New Year's Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 1, 15),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 1, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 2, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 2, 26),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 3, 19),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 3, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 4, 2),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Good Friday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 4, 5),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Easter Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 4, 16),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 4, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 5, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 5, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 6, 18),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 6, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 7, 16),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 7, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 8, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 8, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 9, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 9, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 10, 15),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 10, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 11, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 11, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 12, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    SpecialOpenCloseDayClassification(
+    BusinessDay(
         date=dt.date(2021, 12, 24),
-        type=DayTypeBusinessSpecial.SPECIAL_CLOSE,
-        is_business_day=True,
         name="Christmas Eve",
-        time=dt.time(14, 5),
-        tz="CET",
+        session=Session(open=dt.time(9, 0), close=dt.time(14, 5)),
+        tags={
+            Tags.SPECIAL_CLOSE,
+        },
     ),
-    SpecialOpenCloseDayClassification(
+    BusinessDay(
         date=dt.date(2021, 12, 31),
-        type=DayTypeBusinessSpecial.SPECIAL_CLOSE,
-        is_business_day=True,
         name="New Year's Eve",
-        time=dt.time(14, 5),
-        tz="CET",
+        session=Session(open=dt.time(9, 0), close=dt.time(14, 5)),
+        tags={Tags.SPECIAL_CLOSE, Tags.MONTH_END},
     ),
 ]
 
 xams_2022 = [
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 1, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 1, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 2, 18),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 2, 28),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 3, 18),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 3, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 4, 14),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 4, 15),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Good Friday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 4, 18),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Easter Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 4, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 5, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 5, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 6, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 6, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 7, 15),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 7, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 8, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 8, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 9, 16),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 9, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 10, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 10, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 11, 18),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 11, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 12, 16),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 12, 26),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Boxing Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 12, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
 ]
 
 xams_2023 = [
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 1, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 1, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 2, 17),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 2, 28),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 3, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 3, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 4, 7),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Good Friday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 4, 10),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Easter Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 4, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 4, 28),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 5, 1),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Labour Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 5, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 5, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 6, 16),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 6, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 7, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 7, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 8, 18),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 8, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 9, 15),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 9, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 10, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 10, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 11, 17),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 11, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 12, 15),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 12, 25),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Christmas",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 12, 26),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Boxing Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 12, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
 ]
 
+# XLON: 08:00-16:30
 xlon_2021 = [
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 1, 1),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="New Year's Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 1, 15),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 1, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 2, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 2, 26),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 3, 19),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 3, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 4, 2),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Good Friday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 4, 5),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Easter Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 4, 16),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 4, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 5, 3),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Early May Bank Holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 5, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 5, 28),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 5, 31),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Spring Bank Holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 6, 18),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 6, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 7, 16),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 7, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 8, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 8, 30),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Summer Bank Holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 8, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 9, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 9, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 10, 15),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 10, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 11, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 11, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 12, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    SpecialOpenCloseDayClassification(
+    BusinessDay(
         date=dt.date(2021, 12, 24),
-        type=DayTypeBusinessSpecial.SPECIAL_CLOSE,
-        is_business_day=True,
         name="Christmas Eve",
-        time=dt.time(12, 30),
-        tz="WET",
+        session=Session(open=dt.time(8, 0), close=dt.time(12, 30)),
+        tags={
+            Tags.SPECIAL_CLOSE,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 12, 27),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Weekend Christmas",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 12, 28),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Weekend Boxing Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    SpecialOpenCloseDayClassification(
+    BusinessDay(
         date=dt.date(2021, 12, 31),
-        type=DayTypeBusinessSpecial.SPECIAL_CLOSE,
-        is_business_day=True,
         name="New Year's Eve",
-        time=dt.time(12, 30),
-        tz="WET",
+        session=Session(open=dt.time(8, 0), close=dt.time(12, 30)),
+        tags={Tags.SPECIAL_CLOSE, Tags.MONTH_END},
     ),
 ]
 
 xlon_2022 = [
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 1, 3),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="New Year's Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 1, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 1, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 2, 18),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 2, 28),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 3, 18),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 3, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 4, 14),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 4, 15),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Good Friday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 4, 18),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Easter Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 4, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 5, 2),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Early May Bank Holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 5, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 5, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 6, 2),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="ad-hoc holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 6, 3),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="ad-hoc holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 6, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 6, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 7, 15),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 7, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 8, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 8, 29),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Summer Bank Holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 8, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 9, 16),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 9, 19),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="ad-hoc holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 9, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 10, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 10, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 11, 18),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 11, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 12, 16),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    SpecialOpenCloseDayClassification(
+    BusinessDay(
         date=dt.date(2022, 12, 23),
-        type=DayTypeBusinessSpecial.SPECIAL_CLOSE,
-        is_business_day=True,
         name="Christmas Eve",
-        time=dt.time(12, 30),
-        tz="WET",
+        session=Session(open=dt.time(8, 0), close=dt.time(12, 30)),
+        tags={
+            Tags.SPECIAL_CLOSE,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 12, 26),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Boxing Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 12, 27),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Weekend Christmas",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    SpecialOpenCloseDayClassification(
+    BusinessDay(
         date=dt.date(2022, 12, 30),
-        type=DayTypeBusinessSpecial.SPECIAL_CLOSE,
-        is_business_day=True,
         name="New Year's Eve",
-        time=dt.time(12, 30),
-        tz="WET",
+        session=Session(open=dt.time(8, 0), close=dt.time(12, 30)),
+        tags={Tags.SPECIAL_CLOSE, Tags.MONTH_END},
     ),
 ]
 
 xlon_2023 = [
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 1, 2),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="New Year's Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 1, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 1, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 2, 17),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 2, 28),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 3, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 3, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 4, 7),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Good Friday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 4, 10),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Easter Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 4, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 4, 28),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 5, 1),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Early May Bank Holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 5, 8),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="ad-hoc holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 5, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 5, 29),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Spring Bank Holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 5, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 6, 16),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 6, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 7, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 7, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 8, 18),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 8, 28),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Summer Bank Holiday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 8, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 9, 15),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 9, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 10, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 10, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 11, 17),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 11, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 12, 15),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(8, 0), close=dt.time(16, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    SpecialOpenCloseDayClassification(
+    BusinessDay(
         date=dt.date(2023, 12, 22),
-        type=DayTypeBusinessSpecial.SPECIAL_CLOSE,
-        is_business_day=True,
         name="Christmas Eve",
-        time=dt.time(12, 30),
-        tz="WET",
+        session=Session(open=dt.time(8, 0), close=dt.time(12, 30)),
+        tags={
+            Tags.SPECIAL_CLOSE,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 12, 25),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Christmas",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 12, 26),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Boxing Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    SpecialOpenCloseDayClassification(
+    BusinessDay(
         date=dt.date(2023, 12, 29),
-        type=DayTypeBusinessSpecial.SPECIAL_CLOSE,
-        is_business_day=True,
         name="New Year's Eve",
-        time=dt.time(12, 30),
-        tz="WET",
+        session=Session(open=dt.time(8, 0), close=dt.time(12, 30)),
+        tags={Tags.SPECIAL_CLOSE, Tags.MONTH_END},
     ),
 ]
 
+# XSWX: 09:00-17:30
 xswx_2021 = [
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 1, 1),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="New Year's Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 1, 15),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 1, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 2, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 2, 26),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 3, 19),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 3, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 4, 2),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Good Friday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 4, 5),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Easter Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 4, 16),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 4, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 5, 13),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Ascension Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 5, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 5, 24),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Whit Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 5, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 6, 18),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 6, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 7, 16),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 7, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 8, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 8, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 9, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 9, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 10, 15),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 10, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 11, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 11, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 12, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 12, 24),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Christmas Eve",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2021, 12, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2021, 12, 31),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="New Year's Eve",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
 ]
 
 xswx_2022 = [
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 1, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 1, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 2, 18),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 2, 28),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 3, 18),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 3, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 4, 14),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 4, 15),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Good Friday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 4, 18),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Easter Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 4, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 5, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 5, 26),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Ascension Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 5, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 6, 6),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Whit Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 6, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 6, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 7, 15),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 7, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 8, 1),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Swiss National Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 8, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 8, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 9, 16),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 9, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 10, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 10, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 11, 18),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 11, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 12, 16),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2022, 12, 26),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Boxing Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2022, 12, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
 ]
 
 xswx_2023 = [
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 1, 2),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Berchtold's Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 1, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 1, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 2, 17),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 2, 28),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 3, 17),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 3, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 4, 7),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Good Friday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 4, 10),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Easter Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 4, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 4, 28),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 5, 1),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Labour Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 5, 18),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Ascension Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 5, 19),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 5, 29),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Whit Monday",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 5, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 6, 16),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 6, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 7, 21),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 7, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 8, 1),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Swiss National Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 8, 18),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 8, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 9, 15),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 9, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 10, 20),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 10, 31),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 11, 17),
-        type=DayTypeBusinessSpecial.MONTHLY_EXPIRY,
-        is_business_day=True,
         name="monthly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTHLY_EXPIRY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 11, 30),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 12, 15),
-        type=DayTypeBusinessSpecial.WITCHING,
-        is_business_day=True,
         name="quarterly expiry",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={Tags.QUARTERLY_EXPIRY, Tags.MONTHLY_EXPIRY},
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 12, 25),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Christmas",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    NonBusinessDay(
         date=dt.date(2023, 12, 26),
-        type=DayTypeNonBusinessSpecial.HOLIDAY,
-        is_business_day=False,
         name="Boxing Day",
+        tags={
+            Tags.HOLIDAY,
+        },
     ),
-    StandardDayClassification(
+    BusinessDay(
         date=dt.date(2023, 12, 29),
-        type=DayTypeBusinessSpecial.MONTH_END,
-        is_business_day=True,
         name="last trading day of month",
+        session=Session(open=dt.time(9, 0), close=dt.time(17, 30)),
+        tags={
+            Tags.MONTH_END,
+        },
     ),
 ]
 

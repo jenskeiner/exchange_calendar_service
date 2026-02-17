@@ -18,7 +18,7 @@ def init(settings: Settings):
     _ = XTAEExchangeCalendar
 
     # Replace XTAE calendar with custom version.
-    ec.calendar_utils.register_calendar_type("XTAE", XTAEExchangeCalendar, force=True)
+    # ec.calendar_utils.register_calendar_type("XTAE", XTAEExchangeCalendar, force=True)
 
     # Add completely new calendar.
     ec.calendar_utils.register_calendar_type("FOOO", XTAEExchangeCalendar)
@@ -27,7 +27,7 @@ def init(settings: Settings):
     _calendar_names = ec.calendar_utils.get_calendar_names(include_aliases=True)
 
     if (
-        settings.exchanges is None or "XNAS" in settings.exchanges.keys()
+        settings.exchanges is None or "XNAS" in settings.exchanges
     ) and "XNAS" not in _calendar_names:
         if "XNYS" in _calendar_names:
             # For Nasdaq mic use XNYS mic.
@@ -35,7 +35,7 @@ def init(settings: Settings):
         else:
             raise ValueError("Nasdaq calendar not found.")
     if (
-        settings.exchanges is None or "BMEX" in settings.exchanges.keys()
+        settings.exchanges is None or "BMEX" in settings.exchanges
     ) and "BMEX" not in _calendar_names:
         if "XMAD" in _calendar_names:
             # For Madrid, calendar uses segment MIC.

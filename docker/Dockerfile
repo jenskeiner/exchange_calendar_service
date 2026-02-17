@@ -37,4 +37,4 @@ ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 # Expose the service port
 EXPOSE 8080
 
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8080", "--factory", "exchange_calendar_service.app:app"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8080", "--factory", "exchange_calendar_service:app"]
