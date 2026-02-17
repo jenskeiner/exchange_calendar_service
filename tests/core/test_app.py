@@ -175,6 +175,233 @@ def init(settings, another):  # Two args
         assert client is not None
 
 
+class TestEntrypointLoading:
+    """Tests for the entrypoint-based init loading feature."""
+
+    def test_single_entrypoint_is_loaded_and_called(self, tmp_path, monkeypatch):
+        """Test that a single entrypoint is discovered and called."""
+
+        # Create a temporary module with a valid init function
+        init_module = tmp_path / "test_entrypoint_module.py"
+        init_module.write_text(
+            """
+# Track if init was called
+called = False
+received_settings = None
+
+def init(settings):
+    global called, received_settings
+    called = True
+    received_settings = settings
+"""
+        )
+
+        # Add tmp_path to sys.path so we can import the module
+        monkeypatch.syspath_prepend(str(tmp_path))
+
+        # Create a fake entrypoint
+        import importlib.metadata
+
+        def mock_entrypoints(group=None):
+            if group == "exchange_calendar_service.init":
+                return [_FakeEntrypoint("test_ep", "test_entrypoint_module:init")]
+            return []
+
+        monkeypatch.setattr(importlib.metadata, "entry_points", mock_entrypoints)
+
+        settings = Settings(
+            init=None,
+            exchanges=("XNYS",),
+        )
+
+        # Create app - entrypoint should be called
+        _ = app(settings)
+
+        # Verify init was called
+        import test_entrypoint_module
+
+        assert test_entrypoint_module.called is True
+        assert test_entrypoint_module.received_settings is settings
+
+    def test_multiple_entrypoints_all_called(self, tmp_path, monkeypatch):
+        """Test that multiple entrypoints are all called."""
+
+        # Create two temporary modules
+        init_module1 = tmp_path / "test_ep_module1.py"
+        init_module1.write_text(
+            """
+called = False
+received_settings = None
+
+def init(settings):
+    global called, received_settings
+    called = True
+    received_settings = settings
+"""
+        )
+
+        init_module2 = tmp_path / "test_ep_module2.py"
+        init_module2.write_text(
+            """
+called = False
+received_settings = None
+
+def init(settings):
+    global called, received_settings
+    called = True
+    received_settings = settings
+"""
+        )
+
+        monkeypatch.syspath_prepend(str(tmp_path))
+
+        import importlib.metadata
+
+        def mock_entrypoints(group=None):
+            if group == "exchange_calendar_service.init":
+                return [
+                    _FakeEntrypoint("ep1", "test_ep_module1:init"),
+                    _FakeEntrypoint("ep2", "test_ep_module2:init"),
+                ]
+            return []
+
+        monkeypatch.setattr(importlib.metadata, "entry_points", mock_entrypoints)
+
+        settings = Settings(
+            init=None,
+            exchanges=("XNYS",),
+        )
+
+        _ = app(settings)
+
+        import test_ep_module1
+        import test_ep_module2
+
+        assert test_ep_module1.called is True
+        assert test_ep_module2.called is True
+
+    def test_entrypoint_not_callable_raises_error(self, tmp_path, monkeypatch):
+        """Test that non-callable entrypoint raises ValueError."""
+
+        init_module = tmp_path / "test_ep_not_callable.py"
+        init_module.write_text("init = 42")
+        monkeypatch.syspath_prepend(str(tmp_path))
+
+        import importlib.metadata
+
+        def mock_entrypoints(group=None):
+            if group == "exchange_calendar_service.init":
+                return [_FakeEntrypoint("bad_ep", "test_ep_not_callable:init")]
+            return []
+
+        monkeypatch.setattr(importlib.metadata, "entry_points", mock_entrypoints)
+
+        settings = Settings(
+            init=None,
+            exchanges=("XNYS",),
+        )
+
+        with pytest.raises(ValueError, match="is not callable"):
+            app(settings)
+
+    def test_entrypoint_not_a_function_raises_error(self, tmp_path, monkeypatch):
+        """Test that a callable that is not a function raises ValueError."""
+
+        init_module = tmp_path / "test_ep_not_function.py"
+        init_module.write_text(
+            """
+class InitCallable:
+    def __call__(self):
+        pass
+
+init = InitCallable()
+"""
+        )
+        monkeypatch.syspath_prepend(str(tmp_path))
+
+        import importlib.metadata
+
+        def mock_entrypoints(group=None):
+            if group == "exchange_calendar_service.init":
+                return [_FakeEntrypoint("bad_ep", "test_ep_not_function:init")]
+            return []
+
+        monkeypatch.setattr(importlib.metadata, "entry_points", mock_entrypoints)
+
+        settings = Settings(
+            init=None,
+            exchanges=("XNYS",),
+        )
+
+        with pytest.raises(ValueError, match="is not a function"):
+            app(settings)
+
+    def test_entrypoint_wrong_signature_raises_error(self, tmp_path, monkeypatch):
+        """Test that an entrypoint with wrong signature raises ValueError."""
+
+        init_module = tmp_path / "test_ep_wrong_sig.py"
+        init_module.write_text(
+            """
+def init(settings, extra_arg):
+    pass
+"""
+        )
+        monkeypatch.syspath_prepend(str(tmp_path))
+
+        import importlib.metadata
+
+        def mock_entrypoints(group=None):
+            if group == "exchange_calendar_service.init":
+                return [_FakeEntrypoint("bad_ep", "test_ep_wrong_sig:init")]
+            return []
+
+        monkeypatch.setattr(importlib.metadata, "entry_points", mock_entrypoints)
+
+        settings = Settings(
+            init=None,
+            exchanges=("XNYS",),
+        )
+
+        with pytest.raises(ValueError, match="does not have exactly one argument"):
+            app(settings)
+
+    def test_no_entrypoints_is_no_op(self, monkeypatch):
+        """Test that when no entrypoints exist, nothing happens."""
+
+        import importlib.metadata
+
+        def mock_entrypoints(group=None):
+            if group == "exchange_calendar_service.init":
+                return []
+            return []
+
+        monkeypatch.setattr(importlib.metadata, "entry_points", mock_entrypoints)
+
+        settings = Settings(
+            init=None,
+            exchanges=("XNYS",),
+        )
+
+        # Should not raise
+        client = TestClient(app(settings))
+        assert client is not None
+
+
+class _FakeEntrypoint:
+    """Fake entrypoint for testing."""
+
+    def __init__(self, name: str, value: str):
+        self.name = name
+        self._value = value
+
+    def load(self):
+        module_name, callable_name = self._value.rsplit(":", 1)
+        import importlib
+
+        module = importlib.import_module(module_name)
+        return getattr(module, callable_name)
+
+
 # class TestUpdateEndpoint:
 #     """Tests for the /update endpoint."""
 #

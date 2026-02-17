@@ -74,5 +74,8 @@ dev = [
 [project.scripts]
 exchange-calendar-service = "exchange_calendar_service.__main__:main"
 
+# [project.entry-points."exchange_calendar_service.init"]
+# customize = "customize:init"
+
 [tool.pytest.ini_options]
 addopts = "--cov=src/exchange_calendar_service --cov-report=term-missing"

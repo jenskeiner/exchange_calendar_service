@@ -1,44 +1,42 @@
-import logging
+from typing import TYPE_CHECKING
 
 import exchange_calendars as ec
 
-from exchange_calendar_service.app.settings import Settings
+if TYPE_CHECKING:
+    from exchange_calendar_service.app.settings import Settings
 
+
+# A custom version of the XTAE exchange calendar, where Sundays were always non-business days.
 from .xtae import XTAEExchangeCalendar
-
-log = logging.getLogger(__name__)
 
 
 def init(settings: Settings):
-    log.info("Customizing...")
+    """Apply customizations to exchange calendars."""
 
-    # Set logging level to DEBUG.
-    logging.basicConfig(level=logging.DEBUG)
+    # Replace standard XTAE calendar with custom version.
+    ec.calendar_utils.register_calendar_type("XTAE", XTAEExchangeCalendar, force=True)
 
-    _ = XTAEExchangeCalendar
-
-    # Replace XTAE calendar with custom version.
-    # ec.calendar_utils.register_calendar_type("XTAE", XTAEExchangeCalendar, force=True)
-
-    # Add completely new calendar.
+    # Add the same calendar under a new fake MIC.
     ec.calendar_utils.register_calendar_type("FOOO", XTAEExchangeCalendar)
 
-    # Register aliases for exchange calendars, if not already defined.
+    # Register additional aliases for some calendars.
+
     _calendar_names = ec.calendar_utils.get_calendar_names(include_aliases=True)
 
+    # Add XNAS -> XNYS, maybe.
     if (
         settings.exchanges is None or "XNAS" in settings.exchanges
     ) and "XNAS" not in _calendar_names:
         if "XNYS" in _calendar_names:
-            # For Nasdaq mic use XNYS mic.
             ec.calendar_utils.register_calendar_alias("XNAS", "XNYS")
         else:
             raise ValueError("Nasdaq calendar not found.")
+
+    # Add BMEX -> XMAD, maybe.
     if (
         settings.exchanges is None or "BMEX" in settings.exchanges
     ) and "BMEX" not in _calendar_names:
         if "XMAD" in _calendar_names:
-            # For Madrid, calendar uses segment MIC.
             ec.calendar_utils.register_calendar_alias("BMEX", "XMAD")
         else:
             raise ValueError("Madrid calendar not found.")

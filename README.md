@@ -403,11 +403,10 @@ Business days include regular trading days and special open/close days. Returns 
 
 ## Customization
 
-The service can be customized at startup by providing an init function via the `EXCHANGE_CALENDAR_SERVICE_INIT`
-environment variable. This function receives the `Settings` instance and can modify calendars, register aliases, or add
-new ones.
+The service can be customized at startup by providing init functions. These functions receive the `Settings` instance and
+can modify calendars, register aliases, or add new ones.
 
-### Setting the Init Function
+### Init via Environment Variable
 
 Set `EXCHANGE_CALENDAR_SERVICE_INIT` to a module path pointing to a callable, in the format `module:callable`. The
 callable must accept one argument (`Settings`).
@@ -416,6 +415,22 @@ callable must accept one argument (`Settings`).
 export EXCHANGE_CALENDAR_SERVICE_INIT="customize:init"
 uv run python -m exchange_calendar_service.app
 ```
+
+### Init via Entrypoints
+
+Init functions can also be automatically discovered via [entry points](https://packaging.python.org/en/latest/specifications/entry-points/)
+in the `exchange_calendar_service.init` group. All discovered entrypoints are called in the order returned by
+`importlib.metadata`.
+
+To register an entrypoint, add to your `pyproject.toml`:
+
+```toml
+[project.entry-points."exchange_calendar_service.init"]
+my_customizer = "my_package:init_function"
+```
+
+Multiple packages can register entrypoints, and all will be called. This allows customization via installed dependencies
+without needing to set environment variables.
 
 ### Example: customize/__init__.py
 
