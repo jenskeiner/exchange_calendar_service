@@ -75,7 +75,7 @@ For easy deployment, the service is available as a ready-to-use container image
 on [GitHub Container Registry](https://github.com/jenskeiner/exchange_calendar_service/pkgs/container/exchange_calendar_service).
 
 ```bash
-docker run -it --rm -p 8080:8080 jenskeiner/exchange_calendar_service:latest
+docker run -it --rm -p 8080:8080 ghcr.io/jenskeiner/exchange_calendar_service:latest
 ```
 
 ## Examples
