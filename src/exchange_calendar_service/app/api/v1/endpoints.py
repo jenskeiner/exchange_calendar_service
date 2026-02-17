@@ -1,10 +1,10 @@
 import datetime as dt
 import enum
 import itertools
+from collections.abc import Callable
 from datetime import date
 from enum import Enum
 from typing import Annotated, Literal, Union
-from collections.abc import Callable
 
 import pandas as pd
 from cachetools import LFUCache, cached
@@ -24,11 +24,9 @@ class Tags(str, Enum):
     QUARTERLY_EXPIRY = "quarterly expiry"
     MONTHLY_EXPIRY = "monthly expiry"
     MONTH_END = "month end"
-    REGULAR_MONTH_END = "regular month end"
     HOLIDAY = "holiday"
     WEEKEND = "weekend"
     REGULAR = "regular"
-    AD_HOC = "ad-hoc"
 
 
 class AbstractDay(BaseModel):

@@ -4,98 +4,137 @@
 [![Python Support](https://img.shields.io/pypi/pyversions/exchange_calendar_service)](https://pypi.org/project/exchange-calendar-service/)
 [![PyPI Downloads](https://img.shields.io/pypi/dd/exchange-calendar-service)](https://pypi.org/project/exchange-calendar-service/)
 
-An HTTP service for querying trading calendars for stock exchanges. Built
-on [exchange_calendars](https://github.com/gerrymanoim/exchange_calendars) and
-[exchange_calendars_extensions](https://github.com/jenskeiner/exchange_calendars_extensions), it covers 60+ exchanges
-worldwide.
-
-Requires Python 3.11 or later.
+An simple HTTP service for querying exchange calendars for stock exchanges. Built on top
+of [exchange_calendars](https://github.com/gerrymanoim/exchange_calendars)
+and [exchange_calendars_extensions](https://github.com/jenskeiner/exchange_calendars_extensions).
 
 ## Features
 
-- RESTful API for exchange calendar queries
-- Support for 60+ global exchanges
-- Query holidays, special open/close trading days, witching days and more
-- Timezone-aware operations
-- Support for custom calendars and calendar modifications via init hooks
-- Efficient caching with configurable TTL
-- Docker image available for easy deployment
+- RESTful API for exchange calendar queries.
+- Support for 60+ global exchanges.
+- Query holidays, special open/close days, monthly and quarterly expiry days, and more.
+- Support for customization hooks.
+- Docker image available for easy deployment.
 
 ## Installation
 
-### As a dependency
-
-The package is available on [PyPI](https://pypi.org/project/exchange-calendar-service/) and can be added as a dependency
-to your project via [uv](https://github.com/astral-sh/uv) or any other suitable package/dependency management tool.
-
-```bash
-uv add exchange-calendar-service
-```
+The package requires Python 3.11 or later.
 
 ### As a tool
 
-If you are primarily interested in running the service as a tool and without any customization, you can use
-[uv](https://github.com/astral-sh/uv)'s tool support
+If you are primarily interested in running the service as a tool and without any customizations, you can use
+[uv](https://github.com/astral-sh/uv)'s tool support:
 
 ```bash
 uvx exchange-calendar-service
 ```
 
-or install via [pipx](https://github.com/pypa/pipx)
+This will start the service via [Uvicorn](https://uvicorn.dev) on http://localhost:8080 by default. See
+http://localhost:8080/docs for auto-generated API docs.
+
+Alternatively, install and run via [pipx](https://github.com/pypa/pipx):
 
 ```bash
 pipx install exchange-calendar-service
+exchange-calendar-service
 ```
 
-## Quick Start
+### As a dependency
 
-With the package installed in a virtual environment (and with that environment activated), you can start the service
-as a script
+Add the [PyPI package](https://pypi.org/project/exchange-calendar-service/) as a dependency to your Python project via
+[uv](https://github.com/astral-sh/uv):
 
 ```bash
-exchange_calendar-service
+uv add exchange-calendar-service
 ```
 
-Alternatively, you invoke the Python module directly:
+Or edit `pyproject.toml` directly:
+
+```toml
+[project]
+dependencies = [
+    "exchange-calendar-service=^0.1.0",
+]
+```
+
+In a Python virtual environment, you can start the service via a script:
+
+```bash
+exchange-calendar-service
+```
+
+or by running the Python module directly:
 
 ```bash
 python -m exchange_calendar_service
 ```
 
-or
+### Container Image
+
+For easy deployment, the service is available as a ready-to-use container image
+on [GitHub Container Registry](https://github.com/jenskeiner/exchange_calendar_service/pkgs/container/exchange_calendar_service).
 
 ```bash
-uv run exchange_calendar-service
+docker run -it --rm -p 8080:8080 jenskeiner/exchange_calendar_service:latest
 ```
-
-This will start the service via [Uvicorn](https://uvicorn.dev) on http://localhost:8080 by default. See
-http://localhost:8080/docs for auto-generated API docs.
-
-If you're using a different [ASGI](https://asgi.readthedocs.io/en/latest/) web server, point it to the module
-`exchange_calendar_service:app` which is a function that returns an ASGI application.
 
 ## Examples
 
 Assuming the service is running on http://localhost:8080, here are some examples using [curl](https://curl.se). Note
 that you can also conveniently use the auto-generated API docs at http://localhost:8080/docs to try out the endpoints.
 
-### Check if a date is a trading day:
-
-Request:
+### List supported exchanges:
 
 ```bash
-curl "http://localhost:8080/v1/classify_day?day=2024-12-25&mic=XLON"
+curl "http://localhost:8080/v1/exchanges"
 ```
 
-Result:
+### Get information about a specific exchange:
+
+```bash
+curl "http://localhost:8080/v1/exchanges/XLON"
+```
+
+### Describe a specific day:
+
+```bash
+curl "http://localhost:8080/v1/exchanges/XLON/days/2024-12-25"
+```
+
+Result (non-business day):
 
 ```json
 {
   "date": "2024-12-25",
-  "type": "holiday",
-  "is_business_day": false,
-  "name": "Christmas Day"
+  "name": "Christmas Day",
+  "tags": [
+    "holiday"
+  ],
+  "is_business_day": false
 }
+```
+
+Result (business day):
+
+```json
+{
+  "date": "2024-12-24",
+  "name": null,
+  "tags": [
+    "regular"
+  ],
+  "is_business_day": true,
+  "session": {
+    "open": "08:00:00",
+    "close": "16:30:00"
+  }
+}
+```
+
+### Query days in a date range:
+
+```bash
+curl "http://localhost:8080/v1/exchanges/XLON/days?start=2024-12-24&end=2024-12-27"
 ```
 
 ## Configuration
@@ -107,16 +146,14 @@ Here's an example `.env` file:
 
 ```env
 exchanges='["XLON", "XNYS"]'  # Limit the service to these calendars, identified by their MIC codes.
-init=myapp:customize_calendars  # Set to a callable to customize calendars on startup. Format: `module:callable`.
-changes_api_key=secret-key  # Set to enable the `/update` endpoint for injecting calendar changes.
+init=customize:init  # Set to a callable to customize calendars on startup. Format: `module:callable`.
 ```
 
 And here's the corresponding environment variables to the same effect:
 
 ```bash
-EXCHANGE_CALENDAR_SERVICE_EXCHANGES='["XLON", "XNYS"]'
-EXCHANGE_CALENDAR_SERVICE_INIT=customize:init
-EXCHANGE_CALENDAR_SERVICE_CHANGES_API_KEY=secret-key
+export EXCHANGE_CALENDAR_SERVICE_EXCHANGES='["XLON", "XNYS"]'
+export EXCHANGE_CALENDAR_SERVICE_INIT="customize:init"
 ```
 
 ### Limiting the supported exchanges
@@ -133,277 +170,185 @@ startup, the service will import the callable and invoke it with the settings ob
 This can be used to apply any customizations to the calendars, e.g. adding new calendars, removing existing calendars,
 registering calendar aliases, et cetera. See the [customization example](#customization-example).
 
-### Changes API
-
-When enabled, the service will expose an `/update` endpoint that allows clients to inject calendar changes. The
-endpoint is protected by an API key, which must be provided via the `changes_api_key` setting. Clients must provide
-the API key in the `X-API-Key` request header.
-
-The Changes API provides a way to dynamically update calendars. This can be useful if an ad-hoc change is needed since
-the underlying calendar does not (yet) reflect the change.
-
 ## API Reference
 
 All endpoints are under `/v1/`.
 
-### GET /mics
+### Reference Endpoints
 
-Get list of valid MIC codes for querying exchanges.
+#### GET /exchanges
+
+Get list of supported exchange MIC codes.
 
 **Query Parameters:** None
 
 **Example:**
 
 ```bash
-curl http://localhost:8080/v1/mics
+curl http://localhost:8080/v1/exchanges
 ```
 
 ```json
 [
   "XAMS",
   "XLON",
+  "XNYS",
   "XSWX"
 ]
 ```
 
-### GET /mic2name
+#### GET /exchanges/{mic}
 
-Get mapping of MIC codes to exchange names.
+Get information about a specific exchange.
 
-**Query Parameters:** None
+**Path Parameters:**
+
+- `mic` - MIC code of the exchange
 
 **Example:**
 
 ```bash
-curl http://localhost:8080/v1/mic2name
+curl http://localhost:8080/v1/exchanges/XLON
 ```
 
 ```json
 {
-  "XAMS": "XAMS",
-  "XLON": "XLON",
-  "XSWX": "XSWX"
+  "mic": "XLON",
+  "tz": "Europe/London"
 }
 ```
 
-### GET /timezone
+### Day Endpoints
 
-Get timezone for exchanges.
+#### GET /exchanges/{mic}/days/{day}
 
-**Query Parameters:**
+Describe a specific day for an exchange.
 
-- `mic` (optional) - Single MIC to query. If omitted, returns all exchanges.
-- `standardise` (optional, default: `true`) - Return short timezone name (e.g., `CET`) or full IANA name (e.g.,
-  `Europe/Berlin`)
+**Path Parameters:**
 
-**Example:**
+- `mic` - MIC code of the exchange
+- `day` - Date in ISO format (e.g., `2024-12-25`)
 
-```bash
-curl "http://localhost:8080/v1/timezone?mic=XLON&standardise=true"
-```
-
-```json
-[
-  {
-    "mic": "XLON",
-    "tz": "WET"
-  }
-]
-```
-
-### GET /special_days
-
-Get holidays, special opens/closes, and expiry dates for an exchange.
-
-**Query Parameters:**
-
-- `mic` (required) - MIC code
-- `year` (optional) - Year to query. Defaults to current year.
-- `tz` (optional) - Timezone for special open/close times (e.g., `CET`, `Europe/London`)
+**Response:** A `Day` object with either `is_business_day: true` (business day) or `is_business_day: false` (
+non-business day).
 
 **Example:**
 
 ```bash
-curl "http://localhost:8080/v1/special_days?mic=XLON&year=2024"
-```
-
-```json
-[
-  {
-    "date": "2024-01-01",
-    "type": "holiday",
-    "is_business_day": false,
-    "name": "New Year's Day"
-  },
-  {
-    "date": "2024-03-28",
-    "type": "holiday",
-    "is_business_day": false,
-    "name": "Maundy Thursday"
-  },
-  {
-    "date": "2024-03-28",
-    "type": "special close",
-    "is_business_day": true,
-    "time": "12:30:00",
-    "tz": "Europe/London",
-    "name": "ad-hoc special close"
-  },
-  {
-    "date": "2024-03-15",
-    "type": "monthly expiry",
-    "is_business_day": true,
-    "name": "monthly expiry"
-  }
-]
-```
-
-### GET /classify_day
-
-Classify a specific day type for one or all exchanges.
-
-**Query Parameters:**
-
-- `day` (required) - Date in ISO format (e.g., `2024-12-25`)
-- `mic` (optional) - Single MIC to query. If omitted, returns all exchanges grouped by classification.
-- `tz` (optional) - Timezone for special open/close times
-
-**Example (single MIC):**
-
-```bash
-curl "http://localhost:8080/v1/classify_day?day=2024-12-25&mic=XLON"
+curl "http://localhost:8080/v1/exchanges/XLON/days/2024-12-25"
 ```
 
 ```json
 {
   "date": "2024-12-25",
-  "type": "holiday",
-  "is_business_day": false,
-  "name": "Christmas Day"
+  "name": "Christmas Day",
+  "tags": [
+    "holiday"
+  ],
+  "is_business_day": false
 }
 ```
 
-**Example (all exchanges):**
+**Business day response:**
+
+```json
+{
+  "date": "2024-12-24",
+  "name": null,
+  "tags": [
+    "regular"
+  ],
+  "is_business_day": true,
+  "session": {
+    "open": "08:00:00",
+    "close": "16:30:00"
+  }
+}
+```
+
+#### GET /exchanges/{mic}/days
+
+Get days in a date range that match criteria.
+
+**Path Parameters:**
+
+- `mic` - MIC code of the exchange
+
+**Query Parameters:**
+
+- `start` (required) - Start date in ISO format (inclusive)
+- `end` (required) - End date in ISO format (inclusive)
+- `business_day` (optional) - Filter to only business days (`true`) or non-business days (`false`)
+- `include_tags` (optional, repeatable) - Only include days with all of the given tags
+- `exclude_tags` (optional, repeatable) - Exclude days with any of the given tags
+- `order` (optional, default: `asc`) - Sort order: `asc` or `desc`
+- `limit` (optional) - Maximum number of days to return
+
+**Available tags:** `special open`, `special close`, `quarterly expiry`, `monthly expiry`, `month end`, `holiday`,
+`weekend`, `regular`
+
+**Example:**
 
 ```bash
-curl "http://localhost:8080/v1/classify_day?day=2024-12-25"
+curl "http://localhost:8080/v1/exchanges/XLON/days?start=2024-12-24&end=2024-12-27&business_day=false"
 ```
 
 ```json
 [
   {
     "date": "2024-12-25",
-    "type": "holiday",
-    "is_business_day": false,
     "name": "Christmas Day",
-    "mics": [
-      "XLON"
-    ]
-  },
-  {
-    "date": "2024-12-25",
-    "type": "regular",
-    "is_business_day": true,
-    "mics": [
-      "XAMS"
-    ]
+    "tags": [
+      "holiday"
+    ],
+    "is_business_day": false
   }
 ]
 ```
 
-### GET /next_special_days
+#### GET /exchanges/{mic}/days/{day}/next
 
-Get next or previous special days relative to a reference date.
+Get the next (or previous) days matching criteria relative to a reference day.
+
+**Path Parameters:**
+
+- `mic` - MIC code of the exchange
+- `day` - Reference date in ISO format
 
 **Query Parameters:**
 
-- `day` (optional, default: today) - Reference date in ISO format
-- `forward` (optional, default: `true`) - Search direction (`true` for forward, `false` for backward)
-- `n` (optional, default: `1`) - Number of days to return
+- `direction` (optional, default: `forward`) - Search direction: `forward` or `backward`
 - `inclusive` (optional, default: `true`) - Include the reference day if it matches
-- `mic` (optional) - Comma-separated list of MICs to filter. If omitted, searches all exchanges.
-- `range` (optional) - Maximum search window in days
-- `tz` (optional) - Timezone for special open/close times
-- `exclude_tags` (optional, repeatable) - Exclude dates with specified tags
+- `end` (optional) - End date to bound the search (inclusive)
+- `business_day` (optional) - Filter to only business days or non-business days
+- `include_tags` (optional, repeatable) - Only include days with all of the given tags
+- `exclude_tags` (optional, repeatable) - Exclude days with any of the given tags
+- `limit` (optional) - Maximum number of days to return
+- `order` (optional, default: `asc`) - Sort order of results: `asc` or `desc`
 
 **Example:**
 
 ```bash
-curl "http://localhost:8080/v1/next_special_days?day=2024-12-20&forward=true&n=3&mic=XLON"
+curl "http://localhost:8080/v1/exchanges/XLON/days/2024-12-20/next?direction=forward&limit=3&business_day=false"
 ```
 
 ```json
 [
-  [
-    {
-      "date": "2024-12-25",
-      "classifications": [
-        {
-          "date": "2024-12-25",
-          "type": "holiday",
-          "is_business_day": false,
-          "name": "Christmas Day",
-          "mics": [
-            "XLON"
-          ]
-        }
-      ]
-    }
-  ],
-  200
+  {
+    "date": "2024-12-25",
+    "name": "Christmas Day",
+    "tags": [
+      "holiday"
+    ],
+    "is_business_day": false
+  }
 ]
 ```
-
-Returns a tuple of `[results, status]` where status is `200` on success or `416` if range exceeded.
-
-### GET /next_business_days
-
-Get next or previous business days relative to a reference date.
-
-**Query Parameters:**
-
-- `day` (optional, default: today) - Reference date in ISO format
-- `forward` (optional, default: `true`) - Search direction
-- `n` (optional, default: `1`) - Number of days to return
-- `inclusive` (optional, default: `true`) - Include the reference day if it's a business day
-- `mic` (optional) - Comma-separated list of MICs to filter
-- `range` (optional) - Maximum search window in days
-- `tz` (optional) - Timezone for special open/close times
-- `exclude_tags` (optional, repeatable) - Exclude dates with specified tags
-
-**Example:**
-
-```bash
-curl "http://localhost:8080/v1/next_business_days?day=2024-12-20&forward=true&n=5"
-```
-
-```json
-[
-  [
-    {
-      "date": "2024-12-20",
-      "classifications": [
-        {
-          "date": "2024-12-20",
-          "type": "regular",
-          "is_business_day": true,
-          "mics": [
-            "XAMS",
-            "XLON"
-          ]
-        }
-      ]
-    }
-  ],
-  200
-]
-```
-
-Business days include regular trading days and special open/close days. Returns `[results, status]` format.
 
 ## Customization
 
-The service can be customized at startup by providing init functions. These functions receive the `Settings` instance and
+The service can be customized at startup by providing init functions. These functions receive the `Settings` instance
+and
 can modify calendars, register aliases, or add new ones.
 
 ### Init via Environment Variable
@@ -418,7 +363,8 @@ uv run python -m exchange_calendar_service.app
 
 ### Init via Entrypoints
 
-Init functions can also be automatically discovered via [entry points](https://packaging.python.org/en/latest/specifications/entry-points/)
+Init functions can also be automatically discovered
+via [entry points](https://packaging.python.org/en/latest/specifications/entry-points/)
 in the `exchange_calendar_service.init` group. All discovered entrypoints are called in the order returned by
 `importlib.metadata`.
 
@@ -449,17 +395,17 @@ def init(settings: Settings) -> None:
     log.info("Customizing exchange calendars...")
 
     # Register an alias for an existing calendar
-    ec.calendar_utils.register_calendar_alias("XNAS", "XNYS")
+    ec.register_calendar_alias("XNAS", "XNYS")
 
     # Replace a calendar with a custom version (force=True)
-    # ec.calendar_utils.register_calendar_type("XTAE", CustomCalendar, force=True)
+    # ec.register_calendar_type("XTAE", CustomCalendar, force=True)
 ```
 
 The init function can:
 
-- **Replace calendars** - Use `register_calendar_type(name, calendar_class, force=True)`
-- **Register aliases** - Use `register_calendar_alias(alias, target_calendar)`
-- **Add new calendars** - Use `register_calendar_type(name, calendar_class)`
+- **Replace calendars** - Use `ec.register_calendar_type(name, calendar_class, force=True)`
+- **Register aliases** - Use `ec.register_calendar_alias(alias, target_calendar)`
+- **Add new calendars** - Use `ec.register_calendar_type(name, calendar_class)`
 
 ### Extended Example
 
@@ -488,7 +434,7 @@ Install and enable pre-commit hooks:
 pre-commit install
 ```
 
-The configured hooks run `pyupgrade` (targeting Python 3.11+), `ruff` (linter), and `ruff-format` (formatter).
+The configured hooks run `pyupgrade` (targeting Python 3.12+), `ruff` (linter), and `ruff-format` (formatter).
 
 ## Deployment
 
@@ -514,9 +460,8 @@ Pass configuration via `-e` flags:
 
 ```bash
 docker run -p 8080:8080 \
-  -e EXCHANGE_CALENDAR_SERVICE_CHANGES_API_KEY=your-key \
   -e EXCHANGE_CALENDAR_SERVICE_EXCHANGES='["XLON"]' \
-  exchange-calendar-service
+  ghcr.io/jenskeiner/exchange_calendar_service
 ```
 
 The service listens on port 8080.
