@@ -51,7 +51,8 @@ def _assert_days_equal(actual: list[dict], expected: list[dict]) -> None:
         assert a.keys() == e.keys()
         assert a["date"] == e["date"]
         assert a["is_business_day"] == e["is_business_day"]
-        assert a["name"] == e["name"]
+        if "name" in e:
+            assert a["name"] == e["name"]
         # Tags are sets - order doesn't matter
         assert set(a["tags"]) == set(e["tags"])
         if "session" in e:
@@ -606,7 +607,8 @@ class TestGetExchangeDay:
         assert result["date"] == day
         assert result["is_business_day"] == expected_is_business_day
         assert set(result["tags"]) == expected_tags
-        assert result["name"] == expected_name
+        if expected_name is not None:
+            assert result["name"] == expected_name
 
         if expected_is_business_day:
             assert "session" in result
@@ -666,7 +668,8 @@ class TestGetExchangeDay:
         assert result["session"]["open"] == expected_open
         assert result["session"]["close"] == expected_close
         assert set(result["tags"]) == expected_tags
-        assert result["name"] == expected_name
+        if expected_name is not None:
+            assert result["name"] == expected_name
 
     @pytest.mark.parametrize(
         "mic,day",
@@ -686,13 +689,11 @@ class TestGetExchangeDay:
 
         # Verify all expected fields are present
         assert "date" in result
-        assert "name" in result
         assert "tags" in result
         assert "is_business_day" in result
 
         # Verify types
         assert isinstance(result["date"], str)
-        assert isinstance(result["name"], (str, type(None)))
         assert isinstance(result["tags"], list)
         assert isinstance(result["is_business_day"], bool)
 

@@ -31,7 +31,7 @@ class Tags(str, Enum):
 
 class AbstractDay(BaseModel):
     date: dt.date
-    name: str | None
+    name: str | None = None
     tags: set[Tags]
 
 
@@ -409,6 +409,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
 """,
         operation_id="listExchangeDays",
         responses={200: {"description": "List of days matching the criteria."}},
+        response_model_exclude_none=True,
     )
     def list_exchange_days(
         mic: SupportedMIC,
@@ -465,6 +466,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         description="Returns the description of the given day on the given exchange.",
         operation_id="getExchangeDay",
         responses={200: {"description": "Description of the day on the exchange."}},
+        response_model_exclude_none=True,
     )
     def get_exchange_day(
         mic: SupportedMIC,
@@ -500,6 +502,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
                 "description": "List of next days matching criteria relative to the day on the exchange."
             }
         },
+        response_model_exclude_none=True,
     )
     def list_next_exchange_days(
         mic: SupportedMIC,

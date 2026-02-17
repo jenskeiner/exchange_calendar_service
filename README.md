@@ -69,7 +69,7 @@ or by running the Python module directly:
 python -m exchange_calendar_service
 ```
 
-### Container Image
+### Container image
 
 For easy deployment, the service is available as a ready-to-use container image
 on [GitHub Container Registry](https://github.com/jenskeiner/exchange_calendar_service/pkgs/container/exchange_calendar_service).
@@ -83,42 +83,58 @@ docker run -it --rm -p 8080:8080 ghcr.io/jenskeiner/exchange_calendar_service:la
 Assuming the service is running on http://localhost:8080, here are some examples using [curl](https://curl.se). Note
 that you can also conveniently use the auto-generated API docs at http://localhost:8080/docs to try out the endpoints.
 
-### List supported exchanges:
+### Supported exchanges
 
 ```bash
 curl "http://localhost:8080/v1/exchanges"
 ```
 
-### Get information about a specific exchange:
+returns a list of supported exchange MIC codes.
+
+```json
+[
+  "XAMS",
+  "XBRU",
+  "XBUD",
+  "XCSE",
+  "XDUB",
+  "XETR",
+  "XHEL",
+  "XIST",
+  "XLIS",
+  "XLON",
+  "XMAD",
+  "XOSL",
+  "XPAR"
+]
+```
+
+### Information about a specific exchange
 
 ```bash
 curl "http://localhost:8080/v1/exchanges/XLON"
 ```
 
-### Describe a specific day:
-
-```bash
-curl "http://localhost:8080/v1/exchanges/XLON/days/2024-12-25"
-```
-
-Result (non-business day):
+returns Information about the London Stock Exchange.
 
 ```json
 {
-  "date": "2024-12-25",
-  "name": "Christmas Day",
-  "tags": [
-    "holiday"
-  ],
-  "is_business_day": false
+  "mic": "XLON",
+  "tz": "Europe/London"
 }
+```
+
+### Describe a day on an exchange
+
+```bash
+curl "http://localhost:8080/v1/exchanges/XLON/days/2024-03-12"
 ```
 
 Result (business day):
 
 ```json
 {
-  "date": "2024-12-24",
+  "date": "2024-03-12",
   "name": null,
   "tags": [
     "regular"
@@ -131,25 +147,101 @@ Result (business day):
 }
 ```
 
+```bash
+curl "http://localhost:8080/v1/exchanges/XLON/days/2024-12-15"
+```
+
+Result (non-business day):
+
+```json
+{
+  "date": "2024-12-15",
+  "name": null,
+  "tags": [
+    "weekend"
+  ],
+  "is_business_day": false
+}
+```
+
 ### Query days in a date range:
 
 ```bash
-curl "http://localhost:8080/v1/exchanges/XLON/days?start=2024-12-24&end=2024-12-27"
+curl "http://localhost:8080/v1/exchanges/XLON/days?start=2024-12-23&end=2024-12-27"
+```
+
+Returns a list of descriptions of the days in range.
+
+```json
+[
+  {
+    "date": "2024-12-23",
+    "name": null,
+    "tags": [
+      "regular"
+    ],
+    "is_business_day": true,
+    "session": {
+      "open": "08:00:00",
+      "close": "16:30:00"
+    }
+  },
+  {
+    "date": "2024-12-24",
+    "name": "Christmas Eve",
+    "tags": [
+      "special close"
+    ],
+    "is_business_day": true,
+    "session": {
+      "open": "08:00:00",
+      "close": "12:30:00"
+    }
+  },
+  {
+    "date": "2024-12-25",
+    "name": "Christmas",
+    "tags": [
+      "holiday"
+    ],
+    "is_business_day": false
+  },
+  {
+    "date": "2024-12-26",
+    "name": "Boxing Day",
+    "tags": [
+      "holiday"
+    ],
+    "is_business_day": false
+  },
+  {
+    "date": "2024-12-27",
+    "name": null,
+    "tags": [
+      "regular"
+    ],
+    "is_business_day": true,
+    "session": {
+      "open": "08:00:00",
+      "close": "16:30:00"
+    }
+  }
+]
 ```
 
 ## Configuration
 
-Configuration can be done via an `.env` file and/or via environment variables, with the environment variables taking
-precedence. Environment variables must use the prefix `EXCHANGE_CALENDAR_SERVICE__` to map to the correct setting.
+The service can be configured via an `.env` file and/or environment variables. Environment variables must use the
+prefix `EXCHANGE_CALENDAR_SERVICE__` to map to the correct setting.
 
 Here's an example `.env` file:
 
 ```env
-exchanges='["XLON", "XNYS"]'  # Limit the service to these calendars, identified by their MIC codes.
+exchanges='["XLON", "XNYS"]'  # Limit to these exchanges.
 init=customize:init  # Set to a callable to customize calendars on startup. Format: `module:callable`.
 ```
 
-And here's the corresponding environment variables to the same effect:
+Environment variables to the same effect:
 
 ```bash
 export EXCHANGE_CALENDAR_SERVICE_EXCHANGES='["XLON", "XNYS"]'
@@ -159,18 +251,194 @@ export EXCHANGE_CALENDAR_SERVICE_INIT="customize:init"
 ### Limiting the supported exchanges
 
 By default, the service will support all available exchanges. In some situations, it may be convenient to limit the
-supported exchanges to a subset of the available exchanges. This can be done via the `exchanges` setting, which is a
-JSON array of MIC codes.
+supported exchanges to a subset of the available exchanges. Particularly, limiting the number of exchanges improves the
+startup time of the service. This is because [exchange_calendars](https://github.com/gerrymanoim/exchange_calendars)
+initializes session data on creation of each exchange calendar. This data is not exposed via this service, but
+instantiating a lot of calendars can take a noticeable amount of time.
 
-### Customizations
+### Customization hook
 
-Customizations can be done via the `init` setting, which is a string pointing to a callable, e.g. `customize:init`. On
-startup, the service will import the callable and invoke it with the settings object as an argument.
+Programmatic customizations can be done by pointing to a suitable callable via `<module_name>:<callable_name>`; see the
+example in the [customize](./customize) directory pointed to by `customize:init`. On startup, the service will import
+the callable and invoke it with the settings object as the single argument.
 
 This can be used to apply any customizations to the calendars, e.g. adding new calendars, removing existing calendars,
-registering calendar aliases, et cetera. See the [customization example](#customization-example).
+registering calendar aliases, et cetera. See the [example](./customize/__init__.py).
 
 ## API Reference
+
+### Response Model
+
+The response JSON Schema for a single day on a single exchange looks like this:
+
+```json
+{
+  "$defs": {
+    "BusinessDay": {
+      "properties": {
+        "date": {
+          "format": "date",
+          "title": "Date",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "tags": {
+          "items": {
+            "$ref": "#/$defs/Tags"
+          },
+          "title": "Tags",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "is_business_day": {
+          "const": true,
+          "default": true,
+          "title": "Is Business Day",
+          "type": "boolean"
+        },
+        "session": {
+          "$ref": "#/$defs/Session"
+        }
+      },
+      "required": [
+        "date",
+        "tags",
+        "session"
+      ],
+      "title": "BusinessDay",
+      "type": "object"
+    },
+    "NonBusinessDay": {
+      "properties": {
+        "date": {
+          "format": "date",
+          "title": "Date",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "tags": {
+          "items": {
+            "$ref": "#/$defs/Tags"
+          },
+          "title": "Tags",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "is_business_day": {
+          "const": false,
+          "default": false,
+          "title": "Is Business Day",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "date",
+        "tags"
+      ],
+      "title": "NonBusinessDay",
+      "type": "object"
+    },
+    "Session": {
+      "properties": {
+        "open": {
+          "format": "time",
+          "title": "Open",
+          "type": "string"
+        },
+        "close": {
+          "format": "time",
+          "title": "Close",
+          "type": "string"
+        }
+      },
+      "required": [
+        "open",
+        "close"
+      ],
+      "title": "Session",
+      "type": "object"
+    },
+    "Tags": {
+      "enum": [
+        "special open",
+        "special close",
+        "quarterly expiry",
+        "monthly expiry",
+        "month end",
+        "holiday",
+        "weekend",
+        "regular"
+      ],
+      "title": "Tags",
+      "type": "string"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "False": "#/$defs/NonBusinessDay",
+      "True": "#/$defs/BusinessDay"
+    },
+    "propertyName": "is_business_day"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/BusinessDay"
+    },
+    {
+      "$ref": "#/$defs/NonBusinessDay"
+    }
+  ]
+}
+```
+
+The fields `date`, `is_business_day` and `tags` are always present:
+
+- `date`: The date in ISO format.
+- `is_business_day`: A boolean indicating whether the day is a trading day or not.
+- `tags`: A list of tags associated with the day.
+
+The response may optionally provide a `name` field, e.g. for holidays or special days.
+
+If the day is a business day, the response contains the `session` field which provides the start and end time of the
+trading session.
+
+### Tags
+
+While the `is_business_day` field indicates whether a day is a business days or not, tags allow to attach more
+fine-grained information. Each day can carry multiple tags, e.g. "holiday" and "weekend". The meaning of the tags is as
+follows:
+
+- `special open`: The trading session starts at a non-standard time, typically later than usual.
+- `special close`: The trading session ends at a non-standard time, typically earlier than usual.
+- `quarterly expiry`: Indicates quarterly expiry days, typically the third Thursday in March, June, September and
+  December.
+- `monthly expiry`: Indicates monthly expiry days, typically the third Thursday in the other months.
+- `month end`: The last trading day in the respective month.
+- `holiday`: A holiday on which the exchange is closed.
+- `weekend`: A weekend day on which the exchange is regularly closed.
+- `regular`: The day has regular trading session times.
 
 All endpoints are under `/v1/`.
 
@@ -180,13 +448,13 @@ All endpoints are under `/v1/`.
 
 Get list of supported exchange MIC codes.
 
-**Query Parameters:** None
-
-**Example:**
+**Example: **
 
 ```bash
-curl http://localhost:8080/v1/exchanges
+curl http: //localhost:8080/v1/exchanges
 ```
+
+Response:
 
 ```json
 [
@@ -211,6 +479,8 @@ Get information about a specific exchange.
 curl http://localhost:8080/v1/exchanges/XLON
 ```
 
+Response:
+
 ```json
 {
   "mic": "XLON",
@@ -218,11 +488,13 @@ curl http://localhost:8080/v1/exchanges/XLON
 }
 ```
 
-### Day Endpoints
+### Single Exchange Endpoints
+
+These endpoints return information about one or more days for a single exchange.
 
 #### GET /exchanges/{mic}/days/{day}
 
-Describe a specific day for an exchange.
+Describe a single day for an exchange.
 
 **Path Parameters:**
 
