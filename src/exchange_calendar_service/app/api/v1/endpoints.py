@@ -34,14 +34,14 @@ class Tags(str, Enum):
 
 
 class AbstractDay(BaseModel):
-    date: dt.date
-    name: str | None = None
-    tags: set[Tags]
+    date: dt.date = Field(title="The date of the day in ISO format (YYYY-MM-DD).")
+    name: str | None = Field(title="The name of the day.", default=None)
+    tags: set[Tags] = Field(title="A set of tags associated with the day.")
 
 
 class Session(BaseModel):
-    open: dt.time
-    close: dt.time
+    open: dt.time = Field(title="The start of the trading session (HH:MM:SS).")
+    close: dt.time = Field(title="The end of the trading session (HH:MM:SS).")
 
 
 _KEY_ORDER = ("date", "name", "business_day", "session", "tags")
@@ -52,8 +52,10 @@ def _ordered(d: dict[str, object]) -> dict[str, object]:
 
 
 class BusinessDay(AbstractDay):
-    business_day: Literal[True] = True
-    session: Session
+    business_day: Literal[True] = Field(
+        title="Indicates that the day is a business day.", default=True
+    )
+    session: Session = Field(title="The trading session.")
 
     @model_serializer(mode="wrap")
     def serialize(
@@ -66,7 +68,9 @@ class BusinessDay(AbstractDay):
 
 
 class NonBusinessDay(AbstractDay):
-    business_day: Literal[False] = False
+    business_day: Literal[False] = Field(
+        title="Indicates that the day is not a business day.", default=False
+    )
 
     @model_serializer(mode="wrap")
     def serialize(
@@ -416,7 +420,7 @@ def get_router(exchanges_enum: type[Enum]):
 
     @router.get(
         "/exchanges/{mic}/days",
-        tags=["Days"],
+        tags=["Single Exchange"],
         summary="Get days in a date range that match criteria.",
         description=r"""For an  exchange, this endpoint returns the list of days in a given date range that match the given criteria.
 
@@ -488,7 +492,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
 
     @router.get(
         "/exchanges/{mic}/days/{day}",
-        tags=["Days"],
+        tags=["Single Exchange"],
         summary="Describe a day on an exchange.",
         description="Returns the description of the given day on the given exchange.",
         operation_id="getExchangeDay",
@@ -520,7 +524,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
 
     @router.get(
         "/exchanges/{mic}/days/{day}/next",
-        tags=["Days"],
+        tags=["Single Exchange"],
         summary="Get the next days matching criteria relative to a day on an exchange.",
         description="Get the next days matching criteria relative to a day on an exchange.",
         operation_id="listNextExchangeDays",
@@ -589,7 +593,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
             start, end = lower_bound, start
         else:
             end = pd.Timestamp(end) if end else pd.Timestamp.max.normalize()
-        order0 = "asc" if direction == "forward" else "desc"
+        order0: Literal["asc", "desc"] = "asc" if direction == "forward" else "desc"
 
         result = _get_days(
             mic,

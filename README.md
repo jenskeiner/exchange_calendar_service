@@ -302,7 +302,7 @@ The response JSON Schema for a single day on a single exchange looks like this:
       "properties": {
         "date": {
           "format": "date",
-          "title": "Date",
+          "title": "The date of the day in ISO format (YYYY-MM-DD).",
           "type": "string"
         },
         "name": {
@@ -315,24 +315,25 @@ The response JSON Schema for a single day on a single exchange looks like this:
             }
           ],
           "default": null,
-          "title": "Name"
+          "title": "The name of the day."
         },
         "tags": {
           "items": {
             "$ref": "#/$defs/Tags"
           },
-          "title": "Tags",
+          "title": "A set of tags associated with the day.",
           "type": "array",
           "uniqueItems": true
         },
         "business_day": {
           "const": true,
           "default": true,
-          "title": "Is Business Day",
+          "title": "Indicates that the day is a business day.",
           "type": "boolean"
         },
         "session": {
-          "$ref": "#/$defs/Session"
+          "$ref": "#/$defs/Session",
+          "title": "The trading session."
         }
       },
       "required": [
@@ -347,7 +348,7 @@ The response JSON Schema for a single day on a single exchange looks like this:
       "properties": {
         "date": {
           "format": "date",
-          "title": "Date",
+          "title": "The date of the day in ISO format (YYYY-MM-DD).",
           "type": "string"
         },
         "name": {
@@ -360,20 +361,20 @@ The response JSON Schema for a single day on a single exchange looks like this:
             }
           ],
           "default": null,
-          "title": "Name"
+          "title": "The name of the day."
         },
         "tags": {
           "items": {
             "$ref": "#/$defs/Tags"
           },
-          "title": "Tags",
+          "title": "A set of tags associated with the day.",
           "type": "array",
           "uniqueItems": true
         },
         "business_day": {
           "const": false,
           "default": false,
-          "title": "Is Business Day",
+          "title": "Indicates that the day is not a business day.",
           "type": "boolean"
         }
       },
@@ -388,12 +389,12 @@ The response JSON Schema for a single day on a single exchange looks like this:
       "properties": {
         "open": {
           "format": "time",
-          "title": "Open",
+          "title": "The start of the trading session (HH:MM:SS).",
           "type": "string"
         },
         "close": {
           "format": "time",
-          "title": "Close",
+          "title": "The end of the trading session (HH:MM:SS).",
           "type": "string"
         }
       },
