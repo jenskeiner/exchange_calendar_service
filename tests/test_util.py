@@ -1,8 +1,8 @@
-import pytest
-from exchange_calendar_service.core.util import ExchangeCalendarProxy, ExchangeCalendars
-import exchange_calendars_extensions.core as ex
 import exchange_calendars as ec
+import exchange_calendars_extensions.core as ex
+import pytest
 
+from exchange_calendar_service.core.util import ExchangeCalendarProxy, ExchangeCalendars
 
 ex.apply_extensions()
 
@@ -126,13 +126,15 @@ class TestExchangeCalendars:
         """
         Test that values returns a view of the ExchangeCalendarProxies in the ExchangeCalendars instance.
         """
-        assert isinstance(next(iter(exchange_calendars.values())), ExchangeCalendarProxy)
+        assert isinstance(
+            next(iter(exchange_calendars.values())), ExchangeCalendarProxy
+        )
 
     def test_items(self, exchange_calendars):
         """
         Test that items returns a view of the key-value pairs of the ExchangeCalendarProxies in the ExchangeCalendars instance.
         """
-        assert set(exchange_calendars.items()) == set({
+        assert set(exchange_calendars.items()) == {
             ("XLON", exchange_calendars["XLON"]),
             ("XSWX", exchange_calendars["XSWX"]),
-        })
+        }

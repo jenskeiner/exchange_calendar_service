@@ -431,8 +431,8 @@ Sorting and limiting are optional:
 - `order`: The sort order of the returned days by date (default: ascending).
 - `limit`: If set, limit the number of returned days.
 
-Note: The `limit` parameter applies to the selected days in the order they are returned in. That is, if `order` is 
-`asc`, the first `limit` days with the smallest dates are returned, and vice versa if `order` is `desc`. 
+Note: The `limit` parameter applies to the selected days in the order they are returned in. That is, if `order` is
+`asc`, the first `limit` days with the smallest dates are returned, and vice versa if `order` is `desc`.
 """,
         operation_id="listExchangeDays",
         responses={200: {"description": "List of days matching the criteria."}},
