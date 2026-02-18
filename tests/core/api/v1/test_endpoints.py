@@ -1667,3 +1667,225 @@ class TestGetDayMultiExchange:
         result = response.json()
         # MICs should be in alphabetical order
         assert list(result.keys()) == ["XAMS", "XLON", "XSWX"]
+
+
+@pytest.mark.usefixtures("client")
+class TestListNextDaysMultiExchange:
+    """Tests for GET /v1/days/{day}/next endpoint (multi-exchange)."""
+
+    def test_forward_two_exchanges(self, client):
+        """Test forward search with two exchanges."""
+        day = dt.date(2021, 6, 15)
+
+        params = [
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("direction", "forward"),
+            ("limit", 5),
+        ]
+        response = client.get(f"/v1/days/{day.isoformat()}/next", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Should have 5 date records
+        assert len(result) == 5
+        # Each result should have both exchanges
+        for day_entry in result:
+            assert "XLON" in day_entry
+            assert "XSWX" in day_entry
+            # Both exchanges should have the same date
+            assert day_entry["XLON"]["date"] == day_entry["XSWX"]["date"]
+
+    def test_backward_two_exchanges(self, client):
+        """Test backward search with two exchanges."""
+        day = dt.date(2021, 6, 15)
+
+        params = [
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("direction", "backward"),
+            ("limit", 5),
+        ]
+        response = client.get(f"/v1/days/{day.isoformat()}/next", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Should have 5 date records
+        assert len(result) == 5
+        # Each result should have both exchanges
+        for day_entry in result:
+            assert "XLON" in day_entry
+            assert "XSWX" in day_entry
+
+    @pytest.mark.parametrize(
+        "direction,order,expected_first",
+        [
+            # forward + asc: natural asc order, first is start date
+            ("forward", "asc", "2021-06-15"),
+            # forward + desc: natural asc (limited to 1), then reversed (still just 1)
+            ("forward", "desc", "2021-06-15"),
+            # backward + desc: natural desc order, first is start date
+            ("backward", "desc", "2021-06-15"),
+            # backward + asc: natural desc (limited to 1), then reversed (still just 1)
+            ("backward", "asc", "2021-06-15"),
+        ],
+    )
+    def test_ordering_logic(self, client, direction, order, expected_first):
+        """Test all 4 ordering combinations."""
+        day = dt.date(2021, 6, 15)
+        limit = 1
+
+        params = [
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("direction", direction),
+            ("order", order),
+            ("limit", limit),
+        ]
+        response = client.get(f"/v1/days/{day.isoformat()}/next", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) == 1
+        # Check the date from the first exchange
+        assert list(result[0].values())[0]["date"] == expected_first
+
+    def test_inclusive_false(self, client):
+        """Test exclusive search (day not included)."""
+        day = dt.date(2021, 6, 15)
+
+        params = [
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("direction", "forward"),
+            ("inclusive", False),
+            ("limit", 3),
+        ]
+        response = client.get(f"/v1/days/{day.isoformat()}/next", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) == 3
+        # First result should be the day after (excluding weekends, so June 16 is Wednesday)
+        assert list(result[0].values())[0]["date"] == "2021-06-16"
+
+    def test_business_day_filter(self, client):
+        """Test with business_day filter."""
+        day = dt.date(2021, 6, 15)
+
+        params = [
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("direction", "forward"),
+            ("business_day", True),
+            ("limit", 5),
+        ]
+        response = client.get(f"/v1/days/{day.isoformat()}/next", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # All results should be business days
+        for day_entry in result:
+            for mic_data in day_entry.values():
+                assert mic_data["business_day"] is True
+
+    def test_include_tags(self, client):
+        """Test with include_tags filter."""
+        day = dt.date(2021, 3, 1)
+
+        params = [
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("direction", "forward"),
+            ("include_tags", Tags.QUARTERLY_EXPIRY.value),
+            ("limit", 3),
+        ]
+        response = client.get(f"/v1/days/{day.isoformat()}/next", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # All results should have quarterly_expiry tag
+        for day_entry in result:
+            for mic_data in day_entry.values():
+                assert Tags.QUARTERLY_EXPIRY.value in mic_data["tags"]
+
+    def test_end_parameter_forward(self, client):
+        """Test end parameter limits forward search range."""
+        day = dt.date(2021, 6, 15)
+        end = dt.date(2021, 6, 18)
+
+        params = [
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("direction", "forward"),
+            ("end", end.isoformat()),
+            ("limit", 100),
+        ]
+        response = client.get(f"/v1/days/{day.isoformat()}/next", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Should only include dates up to and including 2021-06-18
+        for day_entry in result:
+            for mic_data in day_entry.values():
+                assert mic_data["date"] <= "2021-06-18"
+
+    def test_end_parameter_backward(self, client):
+        """Test end parameter limits backward search range."""
+        day = dt.date(2021, 6, 15)
+        end = dt.date(2021, 6, 10)
+
+        params = [
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("direction", "backward"),
+            ("end", end.isoformat()),
+            ("limit", 100),
+        ]
+        response = client.get(f"/v1/days/{day.isoformat()}/next", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Should only include dates from end date onwards
+        for day_entry in result:
+            for mic_data in day_entry.values():
+                assert mic_data["date"] >= "2021-06-10"
+
+    def test_three_exchanges(self, client):
+        """Test with three exchanges."""
+        day = dt.date(2021, 6, 15)
+
+        params = [
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("direction", "forward"),
+            ("limit", 3),
+        ]
+        response = client.get(f"/v1/days/{day.isoformat()}/next", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) == 3
+        # Each result should have all three exchanges in alphabetical order
+        for day_entry in result:
+            assert list(day_entry.keys()) == ["XAMS", "XLON", "XSWX"]
+
+    def test_mics_alphabetical_order(self, client):
+        """Test that MICs within each date entry are in alphabetical order."""
+        day = dt.date(2021, 6, 15)
+
+        # Pass MICs in non-alphabetical order
+        params = [
+            ("mics", "XSWX"),
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+            ("direction", "forward"),
+            ("limit", 1),
+        ]
+        response = client.get(f"/v1/days/{day.isoformat()}/next", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # MICs should be in alphabetical order regardless of input order
+        assert list(result[0].keys()) == ["XAMS", "XLON", "XSWX"]

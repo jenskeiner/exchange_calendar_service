@@ -984,6 +984,99 @@ Response:
 Note: The `limit` parameter applies to the number of date records returned, not the total number of individual
 exchange-day entries.
 
+#### GET /days/{day}/next
+
+Get the next days matching criteria relative to a day for multiple exchanges.
+
+Path parameters:
+
+- `day` - Date in ISO format (e.g., `2024-12-25`)
+
+Query parameters:
+
+- `mics` (required, repeatable) - One or more MIC codes of the exchanges to query
+- `direction` (optional, default: `forward`) - Search direction: `forward` or `backward`
+- `inclusive` (optional, default: `true`) - If `true`, include the start day in results
+- `end` (optional) - End date to limit the search range
+- `business_day` (optional) - Filter to only business days (`true`) or non-business days (`false`)
+- `include_tags` (optional, repeatable) - Only include days with all the given tags
+- `exclude_tags` (optional, repeatable) - Exclude days with any of the given tags
+- `order` (optional, default: `asc`) - Sort order: `asc` or `desc`
+- `limit` (optional) - Maximum number of date records to return
+
+The response is grouped by date, with MICs within each date ordered alphabetically.
+
+Example request:
+
+```bash
+curl "http://localhost:8080/v1/days/2024-12-24/next?mics=XLON&mics=XSWX&direction=forward&limit=3"
+```
+
+Response:
+
+```json
+[
+  {
+    "XLON": {
+      "date": "2024-12-24",
+      "name": "Christmas Eve",
+      "business_day": true,
+      "session": {
+        "open": "08:00:00",
+        "close": "12:30:00"
+      },
+      "tags": [
+        "special close"
+      ]
+    },
+    "XSWX": {
+      "date": "2024-12-24",
+      "name": "Christmas Eve",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    }
+  },
+  {
+    "XLON": {
+      "date": "2024-12-25",
+      "name": "Christmas",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    },
+    "XSWX": {
+      "date": "2024-12-25",
+      "name": "Christmas",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    }
+  },
+  {
+    "XLON": {
+      "date": "2024-12-26",
+      "name": "Boxing Day",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    },
+    "XSWX": {
+      "date": "2024-12-26",
+      "name": "Boxing Day",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    }
+  }
+]
+```
+
 ## Development
 
 Clone this repository and run `uv sync` and you are good to go.

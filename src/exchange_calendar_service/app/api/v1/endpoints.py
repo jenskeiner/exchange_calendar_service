@@ -822,4 +822,96 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
         assert len(days) == 1
         return days[0]
 
+    @router.get(
+        "/days/{day}/next",
+        tags=["Multi-Exchange"],
+        summary="Get the next days matching criteria relative to a day for multiple exchanges.",
+        description="Get the next days matching criteria relative to a day for multiple exchanges.",
+        operation_id="listNextDays",
+        responses={
+            200: {
+                "description": "List of next days matching criteria relative to the day for multiple exchanges."
+            }
+        },
+        response_model_exclude_none=True,
+    )
+    def list_next_days(
+        mics: Annotated[
+            list[SupportedMIC],
+            Query(title="MIC codes", description="One or more MIC codes to query."),
+        ],
+        day: dt.date,
+        direction: Literal["forward", "backward"] = "forward",
+        inclusive: bool = True,
+        end: dt.date | None = None,
+        business_day: bool | None = None,
+        include_tags: Annotated[list[Tags] | None, Query()] = None,
+        exclude_tags: Annotated[list[Tags] | None, Query()] = None,
+        limit: Annotated[int, Field(gt=0)] | None = None,
+        order: Literal["asc", "desc"] = "asc",
+    ) -> MultiExchangeDays:
+        """
+        Get the next days matching criteria relative to a day for multiple exchanges.
+
+        Parameters
+        ----------
+        mics : list of SupportedMIC
+            The MICs of the exchanges to query.
+        day : dt.date
+            The start of the period (inclusive).
+        direction : {'forward', 'backward'}, default 'forward'
+            The direction to search in relative to the day.
+        inclusive : bool, default True
+            If set, the day itself is included in the searched date range.
+        end : dt.date or None, optional
+            The end of the date range to search (inclusive).
+        business_day : bool or None, optional
+            If set, only include (non) business days.
+        include_tags : list of Tags or None, optional
+            If set, only include days that have all of the given tags.
+        exclude_tags : list of Tags or None, optional
+            If set, exclude days that have any of the given tags.
+        limit : int or None, optional
+            If set, limit the number of returned date records.
+        order : {'asc', 'desc'}, default 'asc'
+            The sort order of the returned days by date.
+
+        Returns
+        -------
+        MultiExchangeDays
+            List of dicts, each mapping MIC to Day for a specific date.
+        """
+        start = pd.Timestamp(day)
+        if not inclusive:
+            start = start + pd.Timedelta(days=(1 if direction == "forward" else -1))
+        if direction == "backward":
+            # For backward search, we want to search from 'day' down to 'end'
+            # The 'end' parameter serves as the lower bound
+            lower_bound = (
+                pd.Timestamp(end)
+                if end
+                else (pd.Timestamp.min + pd.Timedelta(days=1)).normalize()
+            )
+            # Swap so _get_days_multi processes from lower_bound up to start
+            start, end = lower_bound, start
+        else:
+            end = pd.Timestamp(end) if end else pd.Timestamp.max.normalize()
+        order0: Literal["asc", "desc"] = "asc" if direction == "forward" else "desc"
+
+        result = _get_days_multi(
+            tuple(mics),
+            start,
+            end,
+            business_day,
+            frozenset(include_tags) if include_tags else include_tags,
+            frozenset(exclude_tags) if exclude_tags else exclude_tags,
+            limit,
+            order0,
+        )
+
+        if order != order0:
+            result = list(reversed(result))
+
+        return result
+
     return router
