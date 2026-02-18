@@ -1557,3 +1557,113 @@ class TestListDaysMultiExchange:
             for mic_data in day_entry.values():
                 assert mic_data["business_day"] is True
                 assert Tags.MONTH_END.value in mic_data["tags"]
+
+
+@pytest.mark.usefixtures("client")
+class TestGetDayMultiExchange:
+    """Tests for GET /v1/days/{day} endpoint (multi-exchange)."""
+
+    def test_two_exchanges_business_day(self, client):
+        """Test getting a business day for two exchanges."""
+        day = "2021-06-15"
+
+        params = [
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+        ]
+        response = client.get(f"/v1/days/{day}", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Should have both exchanges
+        assert "XLON" in result
+        assert "XSWX" in result
+        # Both should be business days
+        assert result["XLON"]["business_day"] is True
+        assert result["XSWX"]["business_day"] is True
+        # Both should have the same date
+        assert result["XLON"]["date"] == day
+        assert result["XSWX"]["date"] == day
+        # MICs should be in alphabetical order
+        assert list(result.keys()) == ["XLON", "XSWX"]
+
+    def test_three_exchanges(self, client):
+        """Test getting a day for three exchanges."""
+        day = "2021-06-15"
+
+        params = [
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+        ]
+        response = client.get(f"/v1/days/{day}", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Should have all three exchanges in alphabetical order
+        assert list(result.keys()) == ["XAMS", "XLON", "XSWX"]
+
+    def test_holiday(self, client):
+        """Test getting a holiday for multiple exchanges."""
+        day = "2021-12-25"  # Christmas
+
+        params = [
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+        ]
+        response = client.get(f"/v1/days/{day}", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Both should be holidays
+        assert result["XLON"]["business_day"] is False
+        assert result["XSWX"]["business_day"] is False
+        assert Tags.HOLIDAY.value in result["XLON"]["tags"]
+        assert Tags.HOLIDAY.value in result["XSWX"]["tags"]
+
+    def test_single_exchange(self, client):
+        """Test getting a day for a single exchange."""
+        day = "2021-06-15"
+
+        params = [("mics", "XLON")]
+        response = client.get(f"/v1/days/{day}", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert list(result.keys()) == ["XLON"]
+        assert result["XLON"]["date"] == day
+
+    def test_weekend(self, client):
+        """Test getting a weekend day for multiple exchanges."""
+        day = "2021-06-12"  # Saturday
+
+        params = [
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+        ]
+        response = client.get(f"/v1/days/{day}", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Both should be weekends
+        assert result["XAMS"]["business_day"] is False
+        assert result["XLON"]["business_day"] is False
+        assert Tags.WEEKEND.value in result["XAMS"]["tags"]
+        assert Tags.WEEKEND.value in result["XLON"]["tags"]
+
+    def test_mics_alphabetical_order(self, client):
+        """Test that MICs are in alphabetical order regardless of input order."""
+        day = "2021-06-15"
+
+        # Pass MICs in non-alphabetical order
+        params = [
+            ("mics", "XSWX"),
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+        ]
+        response = client.get(f"/v1/days/{day}", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # MICs should be in alphabetical order
+        assert list(result.keys()) == ["XAMS", "XLON", "XSWX"]

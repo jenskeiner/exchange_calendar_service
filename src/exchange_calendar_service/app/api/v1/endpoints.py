@@ -775,4 +775,51 @@ Note: The `limit` parameter applies to the number of date records returned. Each
             order,
         )
 
+    @router.get(
+        "/days/{day}",
+        tags=["Multi-Exchange"],
+        summary="Get a specific day for multiple exchanges.",
+        description=r"""For multiple exchanges, returns the description of the given day.
+
+The `mics` parameter is a repeatable query parameter for specifying one or more MIC codes.
+""",
+        operation_id="getDay",
+        responses={200: {"description": "Description of the day for each exchange."}},
+        response_model_exclude_none=True,
+    )
+    def get_day(
+        mics: Annotated[
+            list[SupportedMIC],
+            Query(title="MIC codes", description="One or more MIC codes to query."),
+        ],
+        day: dt.date,
+    ) -> MultiExchangeDay:
+        """
+        Get a specific day for multiple exchanges.
+
+        Parameters
+        ----------
+        mics : list of SupportedMIC
+            The MICs of the exchanges to query.
+        day : dt.date
+            The day to describe.
+
+        Returns
+        -------
+        MultiExchangeDay
+            Dict mapping MIC to Day for the specific date.
+        """
+        days = _get_days_multi(
+            tuple(mics),
+            pd.Timestamp(day),
+            pd.Timestamp(day),
+            None,
+            None,
+            None,
+            None,
+            "asc",
+        )
+        assert len(days) == 1
+        return days[0]
+
     return router

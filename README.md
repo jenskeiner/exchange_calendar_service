@@ -882,6 +882,47 @@ curl "http://localhost:8080/v1/exchanges/XLON/days/2024-12-20/next?direction=for
 
 These endpoints return information about one or more days for multiple exchanges in a single request.
 
+#### GET /days/{day}
+
+Get a specific day for multiple exchanges.
+
+Path parameters:
+
+- `day` - Date in ISO format (e.g., `2024-12-25`)
+
+Query parameters:
+
+- `mics` (required, repeatable) - One or more MIC codes of the exchanges to query
+
+Example request:
+
+```bash
+curl "http://localhost:8080/v1/days/2024-12-25?mics=XLON&mics=XSWX"
+```
+
+Response:
+
+```json
+{
+  "XLON": {
+    "date": "2024-12-25",
+    "name": "Christmas",
+    "business_day": false,
+    "tags": [
+      "holiday"
+    ]
+  },
+  "XSWX": {
+    "date": "2024-12-25",
+    "name": "Christmas",
+    "business_day": false,
+    "tags": [
+      "holiday"
+    ]
+  }
+}
+```
+
 #### GET /days
 
 Get days in a date range that match criteria for multiple exchanges.
