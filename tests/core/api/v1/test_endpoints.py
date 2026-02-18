@@ -50,7 +50,7 @@ def _assert_days_equal(actual: list[dict], expected: list[dict]) -> None:
     for a, e in zip(actual, expected):
         assert a.keys() == e.keys()
         assert a["date"] == e["date"]
-        assert a["is_business_day"] == e["is_business_day"]
+        assert a["business_day"] == e["business_day"]
         if "name" in e:
             assert a["name"] == e["name"]
         # Tags are sets - order doesn't matter
@@ -68,7 +68,7 @@ def _filter_days(
     """Filter list of days by criteria matching the endpoint behavior."""
     result = days
     if business_day is not None:
-        result = [d for d in result if d["is_business_day"] == business_day]
+        result = [d for d in result if d["business_day"] == business_day]
     if include_tags is not None:
         result = [d for d in result if include_tags.issubset(set(d["tags"]))]
     if exclude_tags is not None:
@@ -477,7 +477,7 @@ class TestListExchangeDays:
         result = response.json()
         # All results should be business days with month end tag
         for day in result:
-            assert day["is_business_day"] is True
+            assert day["business_day"] is True
             assert Tags.MONTH_END.value in day["tags"]
 
 
@@ -486,7 +486,7 @@ class TestGetExchangeDay:
     """Tests for GET /v1/exchanges/{mic}/days/{day} endpoint."""
 
     @pytest.mark.parametrize(
-        "mic,day,expected_is_business_day,expected_tags,expected_name",
+        "mic,day,expected_business_day,expected_tags,expected_name",
         [
             # Regular business days
             ("XAMS", "2021-01-04", True, {Tags.REGULAR.value}, None),
@@ -593,7 +593,7 @@ class TestGetExchangeDay:
         client,
         mic: str,
         day: str,
-        expected_is_business_day: bool,
+        expected_business_day: bool,
         expected_tags: set[str],
         expected_name: str | None,
     ):
@@ -605,12 +605,12 @@ class TestGetExchangeDay:
         result = response.json()
 
         assert result["date"] == day
-        assert result["is_business_day"] == expected_is_business_day
+        assert result["business_day"] == expected_business_day
         assert set(result["tags"]) == expected_tags
         if expected_name is not None:
             assert result["name"] == expected_name
 
-        if expected_is_business_day:
+        if expected_business_day:
             assert "session" in result
             assert "open" in result["session"]
             assert "close" in result["session"]
@@ -664,7 +664,7 @@ class TestGetExchangeDay:
         assert response.status_code == HTTPStatus.OK
         result = response.json()
 
-        assert result["is_business_day"] is True
+        assert result["business_day"] is True
         assert result["session"]["open"] == expected_open
         assert result["session"]["close"] == expected_close
         assert set(result["tags"]) == expected_tags
@@ -690,12 +690,12 @@ class TestGetExchangeDay:
         # Verify all expected fields are present
         assert "date" in result
         assert "tags" in result
-        assert "is_business_day" in result
+        assert "business_day" in result
 
         # Verify types
         assert isinstance(result["date"], str)
         assert isinstance(result["tags"], list)
-        assert isinstance(result["is_business_day"], bool)
+        assert isinstance(result["business_day"], bool)
 
 
 @pytest.mark.usefixtures("client")
@@ -887,7 +887,7 @@ class TestListNextExchangeDays:
         result = response.json()
         assert len(result) == 1
         assert result[0]["date"] == expected_first_date
-        assert result[0]["is_business_day"] is True
+        assert result[0]["business_day"] is True
 
     @pytest.mark.parametrize(
         "direction,limit,expected_first_date",
@@ -1060,7 +1060,7 @@ class TestListNextExchangeDays:
         result = response.json()
         # All results should match the business_day filter
         for d in result:
-            assert d["is_business_day"] == expected_business_day_value
+            assert d["business_day"] == expected_business_day_value
 
     @pytest.mark.parametrize(
         "mic,day,direction,business_day,include_tags,end",
@@ -1106,7 +1106,7 @@ class TestListNextExchangeDays:
         result = response.json()
         # All results should be business days with the expected tag
         for d in result:
-            assert d["is_business_day"] is True
+            assert d["business_day"] is True
             assert include_tags in d["tags"]
         # Verify we got some results
         assert len(result) > 0
@@ -1159,7 +1159,7 @@ class TestListNextExchangeDays:
         result = response.json()
         assert len(result) == 1
         assert "date" in result[0]
-        assert "is_business_day" in result[0]
+        assert "business_day" in result[0]
 
     def test_forward_asc_from_holiday_with_tags(self, client):
         """Test forward asc from a holiday, looking for business days with month end tag."""

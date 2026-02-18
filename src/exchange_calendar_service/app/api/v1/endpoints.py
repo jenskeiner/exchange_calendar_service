@@ -41,17 +41,15 @@ class Session(BaseModel):
 
 
 class BusinessDay(AbstractDay):
-    is_business_day: Literal[True] = True
+    business_day: Literal[True] = True
     session: Session
 
 
 class NonBusinessDay(AbstractDay):
-    is_business_day: Literal[False] = False
+    business_day: Literal[False] = False
 
 
-Day = Annotated[
-    Union[BusinessDay, NonBusinessDay], Field(discriminator="is_business_day")
-]
+Day = Annotated[Union[BusinessDay, NonBusinessDay], Field(discriminator="business_day")]
 
 
 class ExchangeInfo(BaseModel):

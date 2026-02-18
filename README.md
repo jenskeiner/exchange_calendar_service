@@ -139,7 +139,7 @@ Result (business day):
   "tags": [
     "regular"
   ],
-  "is_business_day": true,
+  "business_day": true,
   "session": {
     "open": "08:00:00",
     "close": "16:30:00"
@@ -160,7 +160,7 @@ Result (non-business day):
   "tags": [
     "weekend"
   ],
-  "is_business_day": false
+  "business_day": false
 }
 ```
 
@@ -180,7 +180,7 @@ Returns a list of descriptions of the days in range.
     "tags": [
       "regular"
     ],
-    "is_business_day": true,
+    "business_day": true,
     "session": {
       "open": "08:00:00",
       "close": "16:30:00"
@@ -192,7 +192,7 @@ Returns a list of descriptions of the days in range.
     "tags": [
       "special close"
     ],
-    "is_business_day": true,
+    "business_day": true,
     "session": {
       "open": "08:00:00",
       "close": "12:30:00"
@@ -204,7 +204,7 @@ Returns a list of descriptions of the days in range.
     "tags": [
       "holiday"
     ],
-    "is_business_day": false
+    "business_day": false
   },
   {
     "date": "2024-12-26",
@@ -212,7 +212,7 @@ Returns a list of descriptions of the days in range.
     "tags": [
       "holiday"
     ],
-    "is_business_day": false
+    "business_day": false
   },
   {
     "date": "2024-12-27",
@@ -220,7 +220,7 @@ Returns a list of descriptions of the days in range.
     "tags": [
       "regular"
     ],
-    "is_business_day": true,
+    "business_day": true,
     "session": {
       "open": "08:00:00",
       "close": "16:30:00"
@@ -301,7 +301,7 @@ The response JSON Schema for a single day on a single exchange looks like this:
           "type": "array",
           "uniqueItems": true
         },
-        "is_business_day": {
+        "business_day": {
           "const": true,
           "default": true,
           "title": "Is Business Day",
@@ -346,7 +346,7 @@ The response JSON Schema for a single day on a single exchange looks like this:
           "type": "array",
           "uniqueItems": true
         },
-        "is_business_day": {
+        "business_day": {
           "const": false,
           "default": false,
           "title": "Is Business Day",
@@ -400,7 +400,7 @@ The response JSON Schema for a single day on a single exchange looks like this:
       "False": "#/$defs/NonBusinessDay",
       "True": "#/$defs/BusinessDay"
     },
-    "propertyName": "is_business_day"
+    "propertyName": "business_day"
   },
   "oneOf": [
     {
@@ -413,10 +413,10 @@ The response JSON Schema for a single day on a single exchange looks like this:
 }
 ```
 
-The fields `date`, `is_business_day` and `tags` are always present:
+The fields `date`, `business_day` and `tags` are always present:
 
 - `date`: The date in ISO format.
-- `is_business_day`: A boolean indicating whether the day is a trading day or not.
+- `business_day`: A boolean indicating whether the day is a trading day or not.
 - `tags`: A list of tags associated with the day.
 
 The response may optionally provide a `name` field, e.g. for holidays or special days.
@@ -426,7 +426,7 @@ trading session.
 
 ### Tags
 
-While the `is_business_day` field indicates whether a day is a business days or not, tags allow to attach more
+While the `business_day` field indicates whether a day is a business days or not, tags allow to attach more
 fine-grained information. Each day can carry multiple tags, e.g. "holiday" and "weekend". The meaning of the tags is as
 follows:
 
@@ -501,7 +501,7 @@ Describe a single day for an exchange.
 - `mic` - MIC code of the exchange
 - `day` - Date in ISO format (e.g., `2024-12-25`)
 
-**Response:** A `Day` object with either `is_business_day: true` (business day) or `is_business_day: false` (
+**Response:** A `Day` object with either `business_day: true` (business day) or `business_day: false` (
 non-business day).
 
 **Example:**
@@ -517,7 +517,7 @@ curl "http://localhost:8080/v1/exchanges/XLON/days/2024-12-25"
   "tags": [
     "holiday"
   ],
-  "is_business_day": false
+  "business_day": false
 }
 ```
 
@@ -530,7 +530,7 @@ curl "http://localhost:8080/v1/exchanges/XLON/days/2024-12-25"
   "tags": [
     "regular"
   ],
-  "is_business_day": true,
+  "business_day": true,
   "session": {
     "open": "08:00:00",
     "close": "16:30:00"
@@ -573,7 +573,7 @@ curl "http://localhost:8080/v1/exchanges/XLON/days?start=2024-12-24&end=2024-12-
     "tags": [
       "holiday"
     ],
-    "is_business_day": false
+    "business_day": false
   }
 ]
 ```
@@ -612,7 +612,7 @@ curl "http://localhost:8080/v1/exchanges/XLON/days/2024-12-20/next?direction=for
     "tags": [
       "holiday"
     ],
-    "is_business_day": false
+    "business_day": false
   }
 ]
 ```
