@@ -135,15 +135,14 @@ Result (business day):
 ```json
 {
   "date": "2024-03-12",
-  "name": null,
-  "tags": [
-    "regular"
-  ],
   "business_day": true,
   "session": {
     "open": "08:00:00",
     "close": "16:30:00"
-  }
+  },
+  "tags": [
+    "regular"
+  ]
 }
 ```
 
@@ -156,11 +155,10 @@ Result (non-business day):
 ```json
 {
   "date": "2024-12-15",
-  "name": null,
+  "business_day": false,
   "tags": [
     "weekend"
-  ],
-  "business_day": false
+  ]
 }
 ```
 
@@ -176,55 +174,53 @@ Returns a list of descriptions of the days in range.
 [
   {
     "date": "2024-12-23",
-    "name": null,
-    "tags": [
-      "regular"
-    ],
     "business_day": true,
     "session": {
       "open": "08:00:00",
       "close": "16:30:00"
-    }
+    },
+    "tags": [
+      "regular"
+    ]
   },
   {
     "date": "2024-12-24",
     "name": "Christmas Eve",
-    "tags": [
-      "special close"
-    ],
     "business_day": true,
     "session": {
       "open": "08:00:00",
       "close": "12:30:00"
-    }
+    },
+    "tags": [
+      "special close"
+    ]
   },
   {
     "date": "2024-12-25",
     "name": "Christmas",
+    "business_day": false,
     "tags": [
       "holiday"
-    ],
-    "business_day": false
+    ]
   },
   {
     "date": "2024-12-26",
     "name": "Boxing Day",
+    "business_day": false,
     "tags": [
       "holiday"
-    ],
-    "business_day": false
+    ]
   },
   {
     "date": "2024-12-27",
-    "name": null,
-    "tags": [
-      "regular"
-    ],
     "business_day": true,
     "session": {
       "open": "08:00:00",
       "close": "16:30:00"
-    }
+    },
+    "tags": [
+      "regular"
+    ]
   }
 ]
 ```
