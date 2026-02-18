@@ -526,7 +526,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         responses={200: {"description": "List of days matching the criteria."}},
         response_model_exclude_none=True,
     )
-    def list_exchange_days(
+    async def list_exchange_days(
         mic: SupportedMIC,
         start: dt.date,
         end: dt.date,
@@ -583,7 +583,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         responses={200: {"description": "Description of the day on the exchange."}},
         response_model_exclude_none=True,
     )
-    def get_exchange_day(
+    async def get_exchange_day(
         mic: SupportedMIC,
         day: dt.date,
     ) -> Day:
@@ -619,7 +619,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         },
         response_model_exclude_none=True,
     )
-    def list_next_exchange_days(
+    async def list_next_exchange_days(
         mic: SupportedMIC,
         day: dt.date,
         direction: Literal["forward", "backward"] = "forward",
@@ -724,7 +724,7 @@ Note: The `limit` parameter applies to the number of date records returned. Each
         },
         response_model_exclude_none=True,
     )
-    def list_days(
+    async def list_days(
         mics: Annotated[
             list[SupportedMIC],
             Query(title="MIC codes", description="One or more MIC codes to query."),
@@ -787,7 +787,7 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
         responses={200: {"description": "Description of the day for each exchange."}},
         response_model_exclude_none=True,
     )
-    def get_day(
+    async def get_day(
         mics: Annotated[
             list[SupportedMIC],
             Query(title="MIC codes", description="One or more MIC codes to query."),
@@ -835,7 +835,7 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
         },
         response_model_exclude_none=True,
     )
-    def list_next_days(
+    async def list_next_days(
         mics: Annotated[
             list[SupportedMIC],
             Query(title="MIC codes", description="One or more MIC codes to query."),
