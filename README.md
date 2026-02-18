@@ -225,6 +225,132 @@ Returns a list of descriptions of the days in range.
 ]
 ```
 
+### Query days in a date range for multiple exchanges
+
+```bash
+curl "http://localhost:8080/v1/days?start=2024-12-23&end=2024-12-27&mics=XLON&mics=XNYS"
+```
+
+Returns a list grouped by date, where each element contains data for all requested exchanges.
+
+```json
+[
+  {
+    "XLON": {
+      "date": "2024-12-23",
+      "business_day": true,
+      "session": {
+        "open": "08:00:00",
+        "close": "16:30:00"
+      },
+      "tags": [
+        "regular"
+      ]
+    },
+    "XNYS": {
+      "date": "2024-12-23",
+      "business_day": true,
+      "session": {
+        "open": "09:30:00",
+        "close": "16:00:00"
+      },
+      "tags": [
+        "regular"
+      ]
+    }
+  },
+  {
+    "XLON": {
+      "date": "2024-12-24",
+      "name": "Christmas Eve",
+      "business_day": true,
+      "session": {
+        "open": "08:00:00",
+        "close": "12:30:00"
+      },
+      "tags": [
+        "special close"
+      ]
+    },
+    "XNYS": {
+      "date": "2024-12-24",
+      "name": "Christmas Eve",
+      "business_day": true,
+      "session": {
+        "open": "09:30:00",
+        "close": "13:00:00"
+      },
+      "tags": [
+        "special close"
+      ]
+    }
+  },
+  {
+    "XLON": {
+      "date": "2024-12-25",
+      "name": "Christmas",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    },
+    "XNYS": {
+      "date": "2024-12-25",
+      "name": "Christmas",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    }
+  },
+  {
+    "XLON": {
+      "date": "2024-12-26",
+      "name": "Boxing Day",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    },
+    "XNYS": {
+      "date": "2024-12-26",
+      "business_day": true,
+      "session": {
+        "open": "09:30:00",
+        "close": "16:00:00"
+      },
+      "tags": [
+        "regular"
+      ]
+    }
+  },
+  {
+    "XLON": {
+      "date": "2024-12-27",
+      "business_day": true,
+      "session": {
+        "open": "08:00:00",
+        "close": "16:30:00"
+      },
+      "tags": [
+        "regular"
+      ]
+    },
+    "XNYS": {
+      "date": "2024-12-27",
+      "business_day": true,
+      "session": {
+        "open": "09:30:00",
+        "close": "16:00:00"
+      },
+      "tags": [
+        "regular"
+      ]
+    }
+  }
+]
+```
+
 ## Configuration
 
 The service can be configured via an `.env` file and/or environment variables. Environment variables must use the
@@ -751,6 +877,71 @@ curl "http://localhost:8080/v1/exchanges/XLON/days/2024-12-20/next?direction=for
   }
 ]
 ```
+
+### Multi-Exchange Endpoints
+
+These endpoints return information about one or more days for multiple exchanges in a single request.
+
+#### GET /days
+
+Get days in a date range that match criteria for multiple exchanges.
+
+Query Parameters:
+
+- `mics` (required, repeatable) - One or more MIC codes of the exchanges to query
+- `start` (required) - Start date in ISO format (inclusive)
+- `end` (required) - End date in ISO format (inclusive)
+- `business_day` (optional) - Filter to only business days (`true`) or non-business days (`false`)
+- `include_tags` (optional, repeatable) - Only include days with all the given tags
+- `exclude_tags` (optional, repeatable) - Exclude days with any of the given tags
+- `order` (optional, default: `asc`) - Sort order: `asc` or `desc`
+- `limit` (optional) - Maximum number of date records to return (each record contains all MICs' data for that date)
+
+The response is grouped by date, with MICs within each date ordered alphabetically.
+
+Example request:
+
+```bash
+curl "http://localhost:8080/v1/days?start=2024-12-24&end=2024-12-27&mics=XLON&mics=XNYS&business_day=false"
+```
+
+Response:
+
+```json
+[
+  {
+    "XLON": {
+      "date": "2024-12-25",
+      "name": "Christmas",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    },
+    "XNYS": {
+      "date": "2024-12-25",
+      "name": "Christmas",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    }
+  },
+  {
+    "XLON": {
+      "date": "2024-12-26",
+      "name": "Boxing Day",
+      "business_day": false,
+      "tags": [
+        "holiday"
+      ]
+    }
+  }
+]
+```
+
+Note: The `limit` parameter applies to the number of date records returned, not the total number of individual
+exchange-day entries.
 
 ## Development
 

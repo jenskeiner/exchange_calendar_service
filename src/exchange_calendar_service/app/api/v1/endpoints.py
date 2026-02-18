@@ -124,6 +124,10 @@ def get_router(exchanges_enum: type[Enum]):
     # Type alias for a tuple that can only contain supported MICs, with examples.
     SupportedMICs = Annotated[tuple[SupportedMIC, ...], Field(examples=[MICS[:10]])]
 
+    # Multi-exchange response types
+    MultiExchangeDay = dict[str, Day]
+    MultiExchangeDays = list[MultiExchangeDay]
+
     router = APIRouter()
 
     @router.get(
@@ -418,6 +422,86 @@ def get_router(exchanges_enum: type[Enum]):
                             tags=tags,
                         )
 
+    def _get_days_multi(
+        mics: tuple[SupportedMIC, ...],
+        start: pd.Timestamp,
+        end: pd.Timestamp,
+        business_day: bool | None = None,
+        include_tags: frozenset[Tags] | None = None,
+        exclude_tags: frozenset[Tags] | None = None,
+        limit: Annotated[int, Field(gt=0)] | None = None,
+        order: Literal["asc", "desc"] = "asc",
+    ) -> MultiExchangeDays:
+        """
+        Get days for multiple MICs, grouped by date.
+
+        Returns a list where each element is a dict mapping MIC to Day for a specific date.
+        MICs within each date are ordered alphabetically.
+
+        Parameters
+        ----------
+        mics : tuple of SupportedMIC
+            The MICs of the exchanges to query.
+        start : pd.Timestamp
+            The start of the period (inclusive).
+        end : pd.Timestamp
+            The end of the period (inclusive).
+        business_day : bool or None, optional
+            If set, only include (non) business days.
+        include_tags : frozenset of Tags or None, optional
+            If set, only include days that have all of the given tags.
+        exclude_tags : frozenset of Tags or None, optional
+            If set, exclude days that have any of the given tags.
+        limit : int or None, optional
+            If set, limit the number of returned date records.
+        order : {'asc', 'desc'}, default 'asc'
+            The sort order of the returned days by date.
+
+        Returns
+        -------
+        MultiExchangeDays
+            List of dicts, each mapping MIC to Day for a specific date.
+        """
+        # Get days for each MIC
+        mic_to_days: dict[SupportedMIC, dict[dt.date, Day]] = {}
+        for mic in mics:
+            days = _get_days(
+                mic,
+                start,
+                end,
+                business_day,
+                include_tags,
+                exclude_tags,
+                limit,
+                order,
+            )
+            mic_to_days[mic] = {d.date: d for d in days}
+
+        # Collect all unique dates across all MICs
+        all_dates: set[dt.date] = set()
+        for days_dict in mic_to_days.values():
+            all_dates.update(days_dict.keys())
+
+        # Sort dates according to order
+        sorted_dates = sorted(all_dates, reverse=order == "desc")
+
+        # Apply limit early to avoid unnecessary work
+        if limit is not None:
+            sorted_dates = sorted_dates[:limit]
+
+        # Build result grouped by date
+        result: MultiExchangeDays = []
+        for d in sorted_dates:
+            date_entry: MultiExchangeDay = {}
+            # Sort MICs alphabetically for consistent ordering
+            for mic in sorted(mics):
+                if d in mic_to_days[mic]:
+                    date_entry[mic] = mic_to_days[mic][d]
+            if date_entry:  # Only add if at least one MIC has data for this date
+                result.append(date_entry)
+
+        return result
+
     @router.get(
         "/exchanges/{mic}/days",
         tags=["Single Exchange"],
@@ -610,5 +694,85 @@ Note: The `limit` parameter applies to the selected days in the order they are r
             result = tuple(reversed(result))
 
         return result
+
+    @router.get(
+        "/days",
+        tags=["Multiple Exchanges"],
+        summary="Get days in a date range that match criteria for multiple exchanges.",
+        description=r"""For multiple exchanges, this endpoint returns the list of days in a given date range that match the given criteria.
+
+Start and end date are mandatory and inclusive.
+
+The `mics` parameter is a repeatable query parameter for specifying one or more MIC codes.
+
+Filter criteria are optional:
+- `business_day`: If set, only include (non) business days.
+- `include_tags`: If set, only include days that have at least one of the given tags.
+- `exclude_tags`: If set, exclude days that have any of the given tags.
+
+Sorting and limiting are optional:
+- `order`: The sort order of the returned days by date (default: ascending).
+- `limit`: If set, limit the number of returned date records.
+
+Note: The `limit` parameter applies to the number of date records returned. Each record contains data for all requested MICs that have data for that date. MICs within each date record are ordered alphabetically.
+""",
+        operation_id="listDays",
+        responses={
+            200: {
+                "description": "List of days matching the criteria for multiple exchanges."
+            }
+        },
+        response_model_exclude_none=True,
+    )
+    def list_days(
+        mics: Annotated[
+            list[SupportedMIC],
+            Query(title="MIC codes", description="One or more MIC codes to query."),
+        ],
+        start: dt.date,
+        end: dt.date,
+        business_day: bool | None = None,
+        include_tags: Annotated[list[Tags] | None, Query()] = None,
+        exclude_tags: Annotated[list[Tags] | None, Query()] = None,
+        order: Literal["asc", "desc"] = "asc",
+        limit: Annotated[int, Field(gt=0)] | None = None,
+    ) -> MultiExchangeDays:
+        """
+        Get days for multiple exchanges in a date range.
+
+        Parameters
+        ----------
+        mics : list of SupportedMIC
+            The MICs of the exchanges to query.
+        start : dt.date
+            The start of the period (inclusive).
+        end : dt.date
+            The end of the period (inclusive).
+        business_day : bool or None, optional
+            If set, only include (non) business days.
+        include_tags : list of Tags or None, optional
+            If set, only include days that have all of the given tags.
+        exclude_tags : list of Tags or None, optional
+            If set, exclude days that have any of the given tags.
+        order : {'asc', 'desc'}, default 'asc'
+            The sort order of the returned days by date.
+        limit : int or None, optional
+            If set, limit the number of returned date records.
+
+        Returns
+        -------
+        MultiExchangeDays
+            List of dicts, each mapping MIC to Day for a specific date.
+        """
+        return _get_days_multi(
+            tuple(mics),
+            pd.Timestamp(start),
+            pd.Timestamp(end),
+            business_day,
+            frozenset(include_tags) if include_tags else include_tags,
+            frozenset(exclude_tags) if exclude_tags else exclude_tags,
+            limit,
+            order,
+        )
 
     return router
