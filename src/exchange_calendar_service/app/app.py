@@ -17,6 +17,21 @@ from .settings import Settings
 
 log = logging.getLogger(__name__)
 
+tags_metadata = [
+    {
+        "name": "Reference",
+        "description": "Endpoints that return static reference data.",
+    },
+    {
+        "name": "Single Exchange",
+        "description": "Endpoints that return data for a single exchange.",
+    },
+    {
+        "name": "Multiple Exchanges",
+        "description": "Endpoints that return data for multiple exchanges at once.",
+    },
+]
+
 
 def _validate_and_call_init(init: object, name: str, settings: Settings) -> None:
     """Validate an init function and call it with settings."""
@@ -91,6 +106,7 @@ def app(_settings: Settings | None = None) -> FastAPI:
         title="Exchange Calendar Service",
         version=version,
         description="A RESTful HTTP Service.",
+        openapi_tags=tags_metadata,
     )
 
     router_v1: fastapi.APIRouter = get_router(Exchanges)
