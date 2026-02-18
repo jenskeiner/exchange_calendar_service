@@ -1,16 +1,20 @@
 import datetime as dt
 import enum
 import itertools
+from collections.abc import Callable
 from datetime import date
 from enum import Enum
 from typing import Annotated, Literal, Union
-from collections.abc import Callable
 
 import pandas as pd
 from cachetools import LFUCache, cached
 from fastapi import APIRouter, Query
 from pandas import Timestamp
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_serializer
+from pydantic_core.core_schema import (
+    FieldSerializationInfo,
+    SerializerFunctionWrapHandler,
+)
 
 from exchange_calendar_service.core.common.context import Context
 from exchange_calendar_service.core.common.util import get_enum_key_literal_type
@@ -24,16 +28,14 @@ class Tags(str, Enum):
     QUARTERLY_EXPIRY = "quarterly expiry"
     MONTHLY_EXPIRY = "monthly expiry"
     MONTH_END = "month end"
-    REGULAR_MONTH_END = "regular month end"
     HOLIDAY = "holiday"
     WEEKEND = "weekend"
     REGULAR = "regular"
-    AD_HOC = "ad-hoc"
 
 
 class AbstractDay(BaseModel):
     date: dt.date
-    name: str | None
+    name: str | None = None
     tags: set[Tags]
 
 
@@ -42,18 +44,41 @@ class Session(BaseModel):
     close: dt.time
 
 
+_KEY_ORDER = ("date", "name", "business_day", "session", "tags")
+
+
+def _ordered(d: dict[str, object]) -> dict[str, object]:
+    return {k: d[k] for k in _KEY_ORDER if k in d}
+
+
 class BusinessDay(AbstractDay):
-    is_business_day: Literal[True] = True
+    business_day: Literal[True] = True
     session: Session
+
+    @model_serializer(mode="wrap")
+    def serialize(
+        self, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> dict[str, object]:
+        serialized = handler(self)
+        if info.mode == "json":
+            return _ordered(serialized)
+        return serialized
 
 
 class NonBusinessDay(AbstractDay):
-    is_business_day: Literal[False] = False
+    business_day: Literal[False] = False
+
+    @model_serializer(mode="wrap")
+    def serialize(
+        self, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
+    ) -> dict[str, object]:
+        serialized = handler(self)
+        if info.mode == "json":
+            return _ordered(serialized)
+        return serialized
 
 
-Day = Annotated[
-    Union[BusinessDay, NonBusinessDay], Field(discriminator="is_business_day")
-]
+Day = Annotated[Union[BusinessDay, NonBusinessDay], Field(discriminator="business_day")]
 
 
 class ExchangeInfo(BaseModel):
@@ -411,6 +436,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
 """,
         operation_id="listExchangeDays",
         responses={200: {"description": "List of days matching the criteria."}},
+        response_model_exclude_none=True,
     )
     def list_exchange_days(
         mic: SupportedMIC,
@@ -467,6 +493,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         description="Returns the description of the given day on the given exchange.",
         operation_id="getExchangeDay",
         responses={200: {"description": "Description of the day on the exchange."}},
+        response_model_exclude_none=True,
     )
     def get_exchange_day(
         mic: SupportedMIC,
@@ -502,6 +529,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
                 "description": "List of next days matching criteria relative to the day on the exchange."
             }
         },
+        response_model_exclude_none=True,
     )
     def list_next_exchange_days(
         mic: SupportedMIC,

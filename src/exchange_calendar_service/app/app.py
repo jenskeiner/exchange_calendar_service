@@ -1,5 +1,6 @@
 import importlib
 import importlib.metadata
+import inspect
 import logging
 from enum import Enum
 
@@ -17,6 +18,20 @@ from .settings import Settings
 log = logging.getLogger(__name__)
 
 
+def _validate_and_call_init(init: object, name: str, settings: Settings) -> None:
+    """Validate an init function and call it with settings."""
+    if not callable(init):
+        raise ValueError(f"{name} is not callable.")
+
+    if not inspect.isfunction(init):
+        raise ValueError(f"{name} is not a function.")
+
+    if len(inspect.signature(init).parameters) != 1:
+        raise ValueError(f"{name} does not have exactly one argument.")
+
+    init(settings)
+
+
 def app(_settings: Settings | None = None) -> FastAPI:
     from .settings import get_settings
 
@@ -25,8 +40,6 @@ def app(_settings: Settings | None = None) -> FastAPI:
     # If settings.init is not None, try to import it. Once imported. check if it is a callable with zero arguments.
     # If so, call it. Otherwise, raise an Exception and exit. Use importlib to import the callable.
     if settings.init:
-        import inspect
-
         # Split into module and callable name.
         parts = settings.init.rsplit(":", 1)
         module_name = parts[0]
@@ -41,20 +54,18 @@ def app(_settings: Settings | None = None) -> FastAPI:
             # Get the callable.
             init = getattr(module, callable_name)
 
-            # Check if it is callable.
-            if not callable(init):
-                raise ValueError(f"{settings.init} is not callable.")
+            _validate_and_call_init(init, settings.init, settings)
 
-            # Check if it is a function.
-            if not inspect.isfunction(init):
-                raise ValueError(f"{settings.init} is not a function.")
+    # Discover and call entrypoints from exchange_calendar_service.init group.
+    entrypoints = importlib.metadata.entry_points(
+        group="exchange_calendar_service.init"
+    )
 
-            # Check if it has zero arguments.
-            if len(inspect.signature(init).parameters) != 1:
-                raise ValueError(f"{settings.init} does not have exactly one argument.")
+    for entrypoint in entrypoints:
+        log.info(f"Loading init entrypoint: {entrypoint.name}")
+        init = entrypoint.load()
 
-            # Call the callable.
-            init(settings)
+        _validate_and_call_init(init, f"Entrypoint {entrypoint.name}", settings)
 
     if settings.exchanges is None:
         settings.exchanges = tuple(

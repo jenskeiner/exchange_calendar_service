@@ -185,7 +185,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},value=${{ env.PACKAGE_VERSION }},suffix=
             type=semver,pattern={{major}},value=${{ env.PACKAGE_VERSION }},suffix=
           flavor: |
-            latest=false
+            latest=true
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
 

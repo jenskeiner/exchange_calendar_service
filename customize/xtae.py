@@ -1,5 +1,3 @@
-import datetime
-
 import pandas as pd
 from exchange_calendars.exchange_calendar import SUNDAY, HolidayCalendar
 from exchange_calendars.exchange_calendar_xtae import (
@@ -41,13 +39,6 @@ class XTAEExchangeCalendar(XTAEExchangeCalendarUpstream):
             (x[0], HolidayCalendar([_Holiday(y, ignore=SUNDAY) for y in x[1].rules]))
             for x in super(XTAEExchangeCalendar, self).special_closes
             if not isinstance(x[1], int) or x[1] != SUNDAY
-        ]
-
-    @property
-    def special_closes_adhoc(self) -> list[tuple[datetime.time, pd.DatetimeIndex]]:
-        return [
-            (t, idx)
-            for t, idx in super(XTAEExchangeCalendar, self).special_closes_adhoc
         ]
 
     @property
