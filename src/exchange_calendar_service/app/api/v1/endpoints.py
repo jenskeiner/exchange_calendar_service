@@ -777,7 +777,7 @@ Note: The `limit` parameter applies to the number of date records returned. Each
 
     @router.get(
         "/days/{day}",
-        tags=["Multi-Exchange"],
+        tags=["Multiple Exchanges"],
         summary="Get a specific day for multiple exchanges.",
         description=r"""For multiple exchanges, returns the description of the given day.
 
@@ -824,7 +824,7 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
 
     @router.get(
         "/days/{day}/next",
-        tags=["Multi-Exchange"],
+        tags=["Multiple Exchanges"],
         summary="Get the next days matching criteria relative to a day for multiple exchanges.",
         description="Get the next days matching criteria relative to a day for multiple exchanges.",
         operation_id="listNextDays",
