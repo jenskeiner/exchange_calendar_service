@@ -699,6 +699,52 @@ class TestGetExchangeDay:
 
 
 @pytest.mark.usefixtures("client")
+class TestSerializationKeyOrder:
+    """Tests that JSON keys are returned in the canonical order: date, name, business_day, session, tags."""
+
+    _CANONICAL_ORDER = ("date", "name", "business_day", "session", "tags")
+
+    @staticmethod
+    def _expected_order(keys: tuple[str, ...]) -> tuple[str, ...]:
+        return tuple(k for k in TestSerializationKeyOrder._CANONICAL_ORDER if k in keys)
+
+    @pytest.mark.parametrize(
+        "mic,day",
+        [
+            ("XAMS", "2021-01-04"),
+            ("XLON", "2021-06-18"),
+            ("XSWX", "2021-12-24"),
+            ("BVMF", "2021-02-17"),
+        ],
+    )
+    def test_single_business_day_key_order(self, client, mic: str, day: str):
+        """Verify key order for a single business day response."""
+        response = client.get(f"/v1/exchanges/{mic}/days/{day}")
+        assert response.status_code == HTTPStatus.OK
+        pairs = json.loads(response.text, object_pairs_hook=lambda p: p)
+        keys = tuple(k for k, _ in pairs)
+        assert keys == self._expected_order(keys)
+
+    @pytest.mark.parametrize(
+        "mic,day",
+        [
+            ("XAMS", "2021-01-01"),
+            ("XAMS", "2021-01-02"),
+            ("XLON", "2021-12-27"),
+            ("XSWX", "2021-01-09"),
+        ],
+    )
+    def test_single_non_business_day_key_order(self, client, mic: str, day: str):
+        """Verify key order for a single non-business day response (no session key)."""
+        response = client.get(f"/v1/exchanges/{mic}/days/{day}")
+        assert response.status_code == HTTPStatus.OK
+        pairs = json.loads(response.text, object_pairs_hook=lambda p: p)
+        keys = tuple(k for k, _ in pairs)
+        assert keys == self._expected_order(keys)
+        assert "session" not in keys
+
+
+@pytest.mark.usefixtures("client")
 class TestListNextExchangeDays:
     """Tests for GET /v1/exchanges/{mic}/days/{day}/next endpoint."""
 
