@@ -48,7 +48,7 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          RC_NUMBER=$(gh run list --repo "${REPOSITORY}" --workflow "${WORKFLOW}" --branch "${REF_NAME}" --json databaseId --jq "length + 1")
+          RC_NUMBER=$(gh run list --repo "${REPOSITORY}" --workflow "${WORKFLOW}" --branch "${REF_NAME}" --json databaseId --jq "length")
           echo "RC number is $RC_NUMBER."
           echo "RC_NUMBER=$RC_NUMBER" >> $GITHUB_ENV
       - name: Determine package version.
@@ -124,7 +124,7 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          RC_NUMBER=$(gh run list --repo "${REPOSITORY}" --workflow "${WORKFLOW}" --branch "${REF_NAME}" --json databaseId --jq "length + 1")
+          RC_NUMBER=$(gh run list --repo "${REPOSITORY}" --workflow "${WORKFLOW}" --branch "${REF_NAME}" --json databaseId --jq "length")
           echo "RC number is $RC_NUMBER."
           echo "RC_NUMBER=$RC_NUMBER" >> $GITHUB_ENV
       - name: Docker meta
