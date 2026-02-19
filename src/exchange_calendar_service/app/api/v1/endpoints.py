@@ -10,11 +10,7 @@ import pandas as pd
 from cachetools import LFUCache, cached
 from fastapi import APIRouter, Query
 from pandas import Timestamp
-from pydantic import BaseModel, Field, model_serializer
-from pydantic_core.core_schema import (
-    FieldSerializationInfo,
-    SerializerFunctionWrapHandler,
-)
+from pydantic import BaseModel, Field
 
 from exchange_calendar_service.core.common.context import Context
 from exchange_calendar_service.core.common.util import get_enum_key_literal_type
@@ -33,53 +29,28 @@ class Tags(str, Enum):
     REGULAR = "regular"
 
 
-class AbstractDay(BaseModel):
-    date: dt.date = Field(title="The date of the day in ISO format (YYYY-MM-DD).")
-    name: str | None = Field(title="The name of the day.", default=None)
-    tags: set[Tags] = Field(title="A set of tags associated with the day.")
-
-
 class Session(BaseModel):
     open: dt.time = Field(title="The start of the trading session (HH:MM:SS).")
     close: dt.time = Field(title="The end of the trading session (HH:MM:SS).")
 
 
-_KEY_ORDER = ("date", "name", "business_day", "session", "tags")
-
-
-def _ordered(d: dict[str, object]) -> dict[str, object]:
-    return {k: d[k] for k in _KEY_ORDER if k in d}
-
-
-class BusinessDay(AbstractDay):
+class BusinessDay(BaseModel):
+    date: dt.date = Field(title="The date of the day in ISO format (YYYY-MM-DD).")
+    name: str | None = Field(title="The name of the day.", default=None)
     business_day: Literal[True] = Field(
         title="Indicates that the day is a business day.", default=True
     )
     session: Session = Field(title="The trading session.")
-
-    @model_serializer(mode="wrap")
-    def serialize(
-        self, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> dict[str, object]:
-        serialized = handler(self)
-        if info.mode == "json":
-            return _ordered(serialized)
-        return serialized
+    tags: set[Tags] = Field(title="A set of tags associated with the day.")
 
 
-class NonBusinessDay(AbstractDay):
+class NonBusinessDay(BaseModel):
+    date: dt.date = Field(title="The date of the day in ISO format (YYYY-MM-DD).")
+    name: str | None = Field(title="The name of the day.", default=None)
     business_day: Literal[False] = Field(
         title="Indicates that the day is not a business day.", default=False
     )
-
-    @model_serializer(mode="wrap")
-    def serialize(
-        self, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> dict[str, object]:
-        serialized = handler(self)
-        if info.mode == "json":
-            return _ordered(serialized)
-        return serialized
+    tags: set[Tags] = Field(title="A set of tags associated with the day.")
 
 
 Day = Annotated[Union[BusinessDay, NonBusinessDay], Field(discriminator="business_day")]
