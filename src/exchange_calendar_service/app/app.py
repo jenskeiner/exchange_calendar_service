@@ -3,6 +3,7 @@ import importlib.metadata
 import inspect
 import logging
 from enum import Enum
+from collections.abc import Callable
 
 import exchange_calendars as ec
 import exchange_calendars_extensions.core as ecx_core
@@ -17,8 +18,25 @@ from .settings import Settings
 
 log = logging.getLogger(__name__)
 
+tags_metadata = [
+    {
+        "name": "Reference",
+        "description": "Endpoints that return static reference data.",
+    },
+    {
+        "name": "Single Exchange",
+        "description": "Endpoints that return data for a single exchange.",
+    },
+    {
+        "name": "Multiple Exchanges",
+        "description": "Endpoints that return data for multiple exchanges at once.",
+    },
+]
 
-def _validate_and_call_init(init: object, name: str, settings: Settings) -> None:
+
+def _validate_and_call_init(
+    init: Callable[[Settings], None], name: str, settings: Settings
+) -> None:
     """Validate an init function and call it with settings."""
     if not callable(init):
         raise ValueError(f"{name} is not callable.")
@@ -32,7 +50,7 @@ def _validate_and_call_init(init: object, name: str, settings: Settings) -> None
     init(settings)
 
 
-def app(_settings: Settings | None = None) -> FastAPI:
+def get_app(_settings: Settings | None = None) -> FastAPI:
     from .settings import get_settings
 
     settings: Settings = _settings or get_settings()
@@ -91,6 +109,7 @@ def app(_settings: Settings | None = None) -> FastAPI:
         title="Exchange Calendar Service",
         version=version,
         description="A RESTful HTTP Service.",
+        openapi_tags=tags_metadata,
     )
 
     router_v1: fastapi.APIRouter = get_router(Exchanges)

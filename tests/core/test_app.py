@@ -3,7 +3,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from exchange_calendar_service.app.app import app
+from exchange_calendar_service.app.app import get_app
 from exchange_calendar_service.app.settings import Settings
 
 
@@ -37,7 +37,7 @@ def init(settings):
         )
 
         # Create app - init should be called
-        _ = app(settings)
+        _ = get_app(settings)
 
         # Verify init was called
         import test_init_module
@@ -59,7 +59,7 @@ def init(settings):
         )
 
         # Should not raise - just imports the module
-        _ = app(settings)
+        _ = get_app(settings)
 
     def test_init_not_callable_raises_error(self, tmp_path, monkeypatch):
         """Test that non-callable init raises ValueError."""
@@ -75,7 +75,7 @@ def init(settings):
         )
 
         with pytest.raises(ValueError, match="is not callable"):
-            app(settings)
+            get_app(settings)
 
     def test_init_not_a_function_raises_error(self, tmp_path, monkeypatch):
         """Test that a callable that is not a function raises ValueError."""
@@ -99,7 +99,7 @@ init = InitCallable()
         )
 
         with pytest.raises(ValueError, match="is not a function"):
-            app(settings)
+            get_app(settings)
 
     def test_init_wrong_signature_raises_error(self, tmp_path, monkeypatch):
         """Test that a function with wrong number of arguments raises ValueError."""
@@ -120,7 +120,7 @@ def init(settings, extra_arg):  # Too many args
         )
 
         with pytest.raises(ValueError, match="does not have exactly one argument"):
-            app(settings)
+            get_app(settings)
 
     def test_init_no_args_raises_error(self, tmp_path, monkeypatch):
         """Test that a function with zero arguments raises ValueError."""
@@ -140,7 +140,7 @@ def init():  # No args
         )
 
         with pytest.raises(ValueError, match="does not have exactly one argument"):
-            app(settings)
+            get_app(settings)
 
     def test_init_two_args_raises_error(self, tmp_path, monkeypatch):
         """Test that a function with two arguments raises ValueError."""
@@ -160,7 +160,7 @@ def init(settings, another):  # Two args
         )
 
         with pytest.raises(ValueError, match="does not have exactly one argument"):
-            app(settings)
+            get_app(settings)
 
     def test_init_none_skips_loading(self):
         """Test that when init is None, no init loading occurs."""
@@ -171,7 +171,7 @@ def init(settings, another):  # Two args
         )
 
         # Should not raise
-        client = TestClient(app(settings))
+        client = TestClient(get_app(settings))
         assert client is not None
 
 
@@ -215,7 +215,7 @@ def init(settings):
         )
 
         # Create app - entrypoint should be called
-        _ = app(settings)
+        _ = get_app(settings)
 
         # Verify init was called
         import test_entrypoint_module
@@ -272,7 +272,7 @@ def init(settings):
             exchanges=("XNYS",),
         )
 
-        _ = app(settings)
+        _ = get_app(settings)
 
         import test_ep_module1
         import test_ep_module2
@@ -302,7 +302,7 @@ def init(settings):
         )
 
         with pytest.raises(ValueError, match="is not callable"):
-            app(settings)
+            get_app(settings)
 
     def test_entrypoint_not_a_function_raises_error(self, tmp_path, monkeypatch):
         """Test that a callable that is not a function raises ValueError."""
@@ -334,7 +334,7 @@ init = InitCallable()
         )
 
         with pytest.raises(ValueError, match="is not a function"):
-            app(settings)
+            get_app(settings)
 
     def test_entrypoint_wrong_signature_raises_error(self, tmp_path, monkeypatch):
         """Test that an entrypoint with wrong signature raises ValueError."""
@@ -363,7 +363,7 @@ def init(settings, extra_arg):
         )
 
         with pytest.raises(ValueError, match="does not have exactly one argument"):
-            app(settings)
+            get_app(settings)
 
     def test_no_entrypoints_is_no_op(self, monkeypatch):
         """Test that when no entrypoints exist, nothing happens."""
@@ -383,7 +383,7 @@ def init(settings, extra_arg):
         )
 
         # Should not raise
-        client = TestClient(app(settings))
+        client = TestClient(get_app(settings))
         assert client is not None
 
 

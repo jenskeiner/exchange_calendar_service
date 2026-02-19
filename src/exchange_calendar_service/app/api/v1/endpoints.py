@@ -8,14 +8,12 @@ from typing import Annotated, Literal, Union
 
 import pandas as pd
 from cachetools import LFUCache, cached
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Security
 from pandas import Timestamp
-from pydantic import BaseModel, Field, model_serializer
-from pydantic_core.core_schema import (
-    FieldSerializationInfo,
-    SerializerFunctionWrapHandler,
-)
+from pydantic import BaseModel, Field
 
+from exchange_calendar_service.app.auth import AuthenticatedUser
+from exchange_calendar_service.app.deps import authorization
 from exchange_calendar_service.core.common.context import Context
 from exchange_calendar_service.core.common.util import get_enum_key_literal_type
 from exchange_calendar_service.core.util import find_interval
@@ -33,49 +31,28 @@ class Tags(str, Enum):
     REGULAR = "regular"
 
 
-class AbstractDay(BaseModel):
-    date: dt.date
-    name: str | None = None
-    tags: set[Tags]
-
-
 class Session(BaseModel):
-    open: dt.time
-    close: dt.time
+    open: dt.time = Field(title="The start of the trading session (HH:MM:SS).")
+    close: dt.time = Field(title="The end of the trading session (HH:MM:SS).")
 
 
-_KEY_ORDER = ("date", "name", "business_day", "session", "tags")
+class BusinessDay(BaseModel):
+    date: dt.date = Field(title="The date of the day in ISO format (YYYY-MM-DD).")
+    name: str | None = Field(title="The name of the day.", default=None)
+    business_day: Literal[True] = Field(
+        title="Indicates that the day is a business day.", default=True
+    )
+    session: Session = Field(title="The trading session.")
+    tags: set[Tags] = Field(title="A set of tags associated with the day.")
 
 
-def _ordered(d: dict[str, object]) -> dict[str, object]:
-    return {k: d[k] for k in _KEY_ORDER if k in d}
-
-
-class BusinessDay(AbstractDay):
-    business_day: Literal[True] = True
-    session: Session
-
-    @model_serializer(mode="wrap")
-    def serialize(
-        self, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> dict[str, object]:
-        serialized = handler(self)
-        if info.mode == "json":
-            return _ordered(serialized)
-        return serialized
-
-
-class NonBusinessDay(AbstractDay):
-    business_day: Literal[False] = False
-
-    @model_serializer(mode="wrap")
-    def serialize(
-        self, handler: SerializerFunctionWrapHandler, info: FieldSerializationInfo
-    ) -> dict[str, object]:
-        serialized = handler(self)
-        if info.mode == "json":
-            return _ordered(serialized)
-        return serialized
+class NonBusinessDay(BaseModel):
+    date: dt.date = Field(title="The date of the day in ISO format (YYYY-MM-DD).")
+    name: str | None = Field(title="The name of the day.", default=None)
+    business_day: Literal[False] = Field(
+        title="Indicates that the day is not a business day.", default=False
+    )
+    tags: set[Tags] = Field(title="A set of tags associated with the day.")
 
 
 Day = Annotated[Union[BusinessDay, NonBusinessDay], Field(discriminator="business_day")]
@@ -120,6 +97,10 @@ def get_router(exchanges_enum: type[Enum]):
     # Type alias for a tuple that can only contain supported MICs, with examples.
     SupportedMICs = Annotated[tuple[SupportedMIC, ...], Field(examples=[MICS[:10]])]
 
+    # Multi-exchange response types
+    MultiExchangeDay = dict[str, Day]
+    MultiExchangeDays = list[MultiExchangeDay]
+
     router = APIRouter()
 
     @router.get(
@@ -130,7 +111,9 @@ def get_router(exchanges_enum: type[Enum]):
         operation_id="getExchanges",
         responses={200: {"description": "List of supported MICs."}},
     )
-    async def get_exchanges() -> SupportedMICs:
+    async def get_exchanges(
+        _: AuthenticatedUser = Security(authorization, scopes=["exchanges:read"]),
+    ) -> SupportedMICs:
         """
         Return the list of supported MICs.
         """
@@ -144,7 +127,10 @@ def get_router(exchanges_enum: type[Enum]):
         operation_id="getExchangeInfo",
         responses={200: {"description": "Information about a single exchange."}},
     )
-    async def get_exchange_info(mic: SupportedMIC) -> ExchangeInfo:
+    async def get_exchange_info(
+        mic: SupportedMIC,
+        _: AuthenticatedUser = Security(authorization, scopes=["exchange:info:read"]),
+    ) -> ExchangeInfo:
         """
         Return information about a single exchange.
         """
@@ -414,9 +400,89 @@ def get_router(exchanges_enum: type[Enum]):
                             tags=tags,
                         )
 
+    def _get_days_multi(
+        mics: tuple[SupportedMIC, ...],
+        start: pd.Timestamp,
+        end: pd.Timestamp,
+        business_day: bool | None = None,
+        include_tags: frozenset[Tags] | None = None,
+        exclude_tags: frozenset[Tags] | None = None,
+        limit: Annotated[int, Field(gt=0)] | None = None,
+        order: Literal["asc", "desc"] = "asc",
+    ) -> MultiExchangeDays:
+        """
+        Get days for multiple MICs, grouped by date.
+
+        Returns a list where each element is a dict mapping MIC to Day for a specific date.
+        MICs within each date are ordered alphabetically.
+
+        Parameters
+        ----------
+        mics : tuple of SupportedMIC
+            The MICs of the exchanges to query.
+        start : pd.Timestamp
+            The start of the period (inclusive).
+        end : pd.Timestamp
+            The end of the period (inclusive).
+        business_day : bool or None, optional
+            If set, only include (non) business days.
+        include_tags : frozenset of Tags or None, optional
+            If set, only include days that have all of the given tags.
+        exclude_tags : frozenset of Tags or None, optional
+            If set, exclude days that have any of the given tags.
+        limit : int or None, optional
+            If set, limit the number of returned date records.
+        order : {'asc', 'desc'}, default 'asc'
+            The sort order of the returned days by date.
+
+        Returns
+        -------
+        MultiExchangeDays
+            List of dicts, each mapping MIC to Day for a specific date.
+        """
+        # Get days for each MIC
+        mic_to_days: dict[SupportedMIC, dict[dt.date, Day]] = {}
+        for mic in mics:
+            days = _get_days(
+                mic,
+                start,
+                end,
+                business_day,
+                include_tags,
+                exclude_tags,
+                limit,
+                order,
+            )
+            mic_to_days[mic] = {d.date: d for d in days}
+
+        # Collect all unique dates across all MICs
+        all_dates: set[dt.date] = set()
+        for days_dict in mic_to_days.values():
+            all_dates.update(days_dict.keys())
+
+        # Sort dates according to order
+        sorted_dates = sorted(all_dates, reverse=order == "desc")
+
+        # Apply limit early to avoid unnecessary work
+        if limit is not None:
+            sorted_dates = sorted_dates[:limit]
+
+        # Build result grouped by date
+        result: MultiExchangeDays = []
+        for d in sorted_dates:
+            date_entry: MultiExchangeDay = {}
+            # Sort MICs alphabetically for consistent ordering
+            for mic in sorted(mics):
+                if d in mic_to_days[mic]:
+                    date_entry[mic] = mic_to_days[mic][d]
+            if date_entry:  # Only add if at least one MIC has data for this date
+                result.append(date_entry)
+
+        return result
+
     @router.get(
         "/exchanges/{mic}/days",
-        tags=["Days"],
+        tags=["Single Exchange"],
         summary="Get days in a date range that match criteria.",
         description=r"""For an  exchange, this endpoint returns the list of days in a given date range that match the given criteria.
 
@@ -431,14 +497,14 @@ Sorting and limiting are optional:
 - `order`: The sort order of the returned days by date (default: ascending).
 - `limit`: If set, limit the number of returned days.
 
-Note: The `limit` parameter applies to the selected days in the order they are returned in. That is, if `order` is 
-`asc`, the first `limit` days with the smallest dates are returned, and vice versa if `order` is `desc`. 
+Note: The `limit` parameter applies to the selected days in the order they are returned in. That is, if `order` is
+`asc`, the first `limit` days with the smallest dates are returned, and vice versa if `order` is `desc`.
 """,
         operation_id="listExchangeDays",
         responses={200: {"description": "List of days matching the criteria."}},
         response_model_exclude_none=True,
     )
-    def list_exchange_days(
+    async def list_exchange_days(
         mic: SupportedMIC,
         start: dt.date,
         end: dt.date,
@@ -447,6 +513,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         exclude_tags: Annotated[list[Tags] | None, Query()] = None,
         order: Literal["asc", "desc"] = "asc",
         limit: Annotated[int, Field(gt=0)] | None = None,
+        _: AuthenticatedUser = Security(authorization, scopes=["exchange:days:read"]),
     ) -> tuple[Day, ...]:
         """
         Describe the given day on the given exchange.
@@ -488,16 +555,17 @@ Note: The `limit` parameter applies to the selected days in the order they are r
 
     @router.get(
         "/exchanges/{mic}/days/{day}",
-        tags=["Days"],
+        tags=["Single Exchange"],
         summary="Describe a day on an exchange.",
         description="Returns the description of the given day on the given exchange.",
         operation_id="getExchangeDay",
         responses={200: {"description": "Description of the day on the exchange."}},
         response_model_exclude_none=True,
     )
-    def get_exchange_day(
+    async def get_exchange_day(
         mic: SupportedMIC,
         day: dt.date,
+        _: AuthenticatedUser = Security(authorization, scopes=["exchange:days:read"]),
     ) -> Day:
         """
         Describe the given day on the given exchange.
@@ -520,7 +588,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
 
     @router.get(
         "/exchanges/{mic}/days/{day}/next",
-        tags=["Days"],
+        tags=["Single Exchange"],
         summary="Get the next days matching criteria relative to a day on an exchange.",
         description="Get the next days matching criteria relative to a day on an exchange.",
         operation_id="listNextExchangeDays",
@@ -531,7 +599,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         },
         response_model_exclude_none=True,
     )
-    def list_next_exchange_days(
+    async def list_next_exchange_days(
         mic: SupportedMIC,
         day: dt.date,
         direction: Literal["forward", "backward"] = "forward",
@@ -542,6 +610,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         exclude_tags: Annotated[list[Tags] | None, Query()] = None,
         limit: Annotated[int, Field(gt=0)] | None = None,
         order: Literal["asc", "desc"] = "asc",
+        _: AuthenticatedUser = Security(authorization, scopes=["exchange:days:read"]),
     ) -> tuple[Day, ...]:
         """
         Describe the given day on the given exchange.
@@ -589,7 +658,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
             start, end = lower_bound, start
         else:
             end = pd.Timestamp(end) if end else pd.Timestamp.max.normalize()
-        order0 = "asc" if direction == "forward" else "desc"
+        order0: Literal["asc", "desc"] = "asc" if direction == "forward" else "desc"
 
         result = _get_days(
             mic,
@@ -604,6 +673,228 @@ Note: The `limit` parameter applies to the selected days in the order they are r
 
         if order != order0:
             result = tuple(reversed(result))
+
+        return result
+
+    @router.get(
+        "/days",
+        tags=["Multiple Exchanges"],
+        summary="Get days in a date range that match criteria for multiple exchanges.",
+        description=r"""For multiple exchanges, this endpoint returns the list of days in a given date range that match the given criteria.
+
+Start and end date are mandatory and inclusive.
+
+The `mics` parameter is a repeatable query parameter for specifying one or more MIC codes.
+
+Filter criteria are optional:
+- `business_day`: If set, only include (non) business days.
+- `include_tags`: If set, only include days that have at least one of the given tags.
+- `exclude_tags`: If set, exclude days that have any of the given tags.
+
+Sorting and limiting are optional:
+- `order`: The sort order of the returned days by date (default: ascending).
+- `limit`: If set, limit the number of returned date records.
+
+Note: The `limit` parameter applies to the number of date records returned. Each record contains data for all requested MICs that have data for that date. MICs within each date record are ordered alphabetically.
+""",
+        operation_id="listDays",
+        responses={
+            200: {
+                "description": "List of days matching the criteria for multiple exchanges."
+            }
+        },
+        response_model_exclude_none=True,
+    )
+    async def list_days(
+        mics: Annotated[
+            list[SupportedMIC],
+            Query(title="MIC codes", description="One or more MIC codes to query."),
+        ],
+        start: dt.date,
+        end: dt.date,
+        business_day: bool | None = None,
+        include_tags: Annotated[list[Tags] | None, Query()] = None,
+        exclude_tags: Annotated[list[Tags] | None, Query()] = None,
+        order: Literal["asc", "desc"] = "asc",
+        limit: Annotated[int, Field(gt=0)] | None = None,
+        _: AuthenticatedUser = Security(authorization, scopes=["days:read"]),
+    ) -> MultiExchangeDays:
+        """
+        Get days for multiple exchanges in a date range.
+
+        Parameters
+        ----------
+        mics : list of SupportedMIC
+            The MICs of the exchanges to query.
+        start : dt.date
+            The start of the period (inclusive).
+        end : dt.date
+            The end of the period (inclusive).
+        business_day : bool or None, optional
+            If set, only include (non) business days.
+        include_tags : list of Tags or None, optional
+            If set, only include days that have all of the given tags.
+        exclude_tags : list of Tags or None, optional
+            If set, exclude days that have any of the given tags.
+        order : {'asc', 'desc'}, default 'asc'
+            The sort order of the returned days by date.
+        limit : int or None, optional
+            If set, limit the number of returned date records.
+
+        Returns
+        -------
+        MultiExchangeDays
+            List of dicts, each mapping MIC to Day for a specific date.
+        """
+        return _get_days_multi(
+            tuple(mics),
+            pd.Timestamp(start),
+            pd.Timestamp(end),
+            business_day,
+            frozenset(include_tags) if include_tags else include_tags,
+            frozenset(exclude_tags) if exclude_tags else exclude_tags,
+            limit,
+            order,
+        )
+
+    @router.get(
+        "/days/{day}",
+        tags=["Multiple Exchanges"],
+        summary="Get a specific day for multiple exchanges.",
+        description=r"""For multiple exchanges, returns the description of the given day.
+
+The `mics` parameter is a repeatable query parameter for specifying one or more MIC codes.
+""",
+        operation_id="getDay",
+        responses={200: {"description": "Description of the day for each exchange."}},
+        response_model_exclude_none=True,
+    )
+    async def get_day(
+        mics: Annotated[
+            list[SupportedMIC],
+            Query(title="MIC codes", description="One or more MIC codes to query."),
+        ],
+        day: dt.date,
+        _: AuthenticatedUser = Security(authorization, scopes=["days:read"]),
+    ) -> MultiExchangeDay:
+        """
+        Get a specific day for multiple exchanges.
+
+        Parameters
+        ----------
+        mics : list of SupportedMIC
+            The MICs of the exchanges to query.
+        day : dt.date
+            The day to describe.
+
+        Returns
+        -------
+        MultiExchangeDay
+            Dict mapping MIC to Day for the specific date.
+        """
+        days = _get_days_multi(
+            tuple(mics),
+            pd.Timestamp(day),
+            pd.Timestamp(day),
+            None,
+            None,
+            None,
+            None,
+            "asc",
+        )
+        assert len(days) == 1
+        return days[0]
+
+    @router.get(
+        "/days/{day}/next",
+        tags=["Multiple Exchanges"],
+        summary="Get the next days matching criteria relative to a day for multiple exchanges.",
+        description="Get the next days matching criteria relative to a day for multiple exchanges.",
+        operation_id="listNextDays",
+        responses={
+            200: {
+                "description": "List of next days matching criteria relative to the day for multiple exchanges."
+            }
+        },
+        response_model_exclude_none=True,
+    )
+    async def list_next_days(
+        mics: Annotated[
+            list[SupportedMIC],
+            Query(title="MIC codes", description="One or more MIC codes to query."),
+        ],
+        day: dt.date,
+        direction: Literal["forward", "backward"] = "forward",
+        inclusive: bool = True,
+        end: dt.date | None = None,
+        business_day: bool | None = None,
+        include_tags: Annotated[list[Tags] | None, Query()] = None,
+        exclude_tags: Annotated[list[Tags] | None, Query()] = None,
+        limit: Annotated[int, Field(gt=0)] | None = None,
+        order: Literal["asc", "desc"] = "asc",
+        _: AuthenticatedUser = Security(authorization, scopes=["days:read"]),
+    ) -> MultiExchangeDays:
+        """
+        Get the next days matching criteria relative to a day for multiple exchanges.
+
+        Parameters
+        ----------
+        mics : list of SupportedMIC
+            The MICs of the exchanges to query.
+        day : dt.date
+            The start of the period (inclusive).
+        direction : {'forward', 'backward'}, default 'forward'
+            The direction to search in relative to the day.
+        inclusive : bool, default True
+            If set, the day itself is included in the searched date range.
+        end : dt.date or None, optional
+            The end of the date range to search (inclusive).
+        business_day : bool or None, optional
+            If set, only include (non) business days.
+        include_tags : list of Tags or None, optional
+            If set, only include days that have all of the given tags.
+        exclude_tags : list of Tags or None, optional
+            If set, exclude days that have any of the given tags.
+        limit : int or None, optional
+            If set, limit the number of returned date records.
+        order : {'asc', 'desc'}, default 'asc'
+            The sort order of the returned days by date.
+
+        Returns
+        -------
+        MultiExchangeDays
+            List of dicts, each mapping MIC to Day for a specific date.
+        """
+        start = pd.Timestamp(day)
+        if not inclusive:
+            start = start + pd.Timedelta(days=(1 if direction == "forward" else -1))
+        if direction == "backward":
+            # For backward search, we want to search from 'day' down to 'end'
+            # The 'end' parameter serves as the lower bound
+            lower_bound = (
+                pd.Timestamp(end)
+                if end
+                else (pd.Timestamp.min + pd.Timedelta(days=1)).normalize()
+            )
+            # Swap so _get_days_multi processes from lower_bound up to start
+            start, end = lower_bound, start
+        else:
+            end = pd.Timestamp(end) if end else pd.Timestamp.max.normalize()
+        order0: Literal["asc", "desc"] = "asc" if direction == "forward" else "desc"
+
+        result = _get_days_multi(
+            tuple(mics),
+            start,
+            end,
+            business_day,
+            frozenset(include_tags) if include_tags else include_tags,
+            frozenset(exclude_tags) if exclude_tags else exclude_tags,
+            limit,
+            order0,
+        )
+
+        if order != order0:
+            result = list(reversed(result))
 
         return result
 
