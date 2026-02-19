@@ -8,7 +8,7 @@ from typing import Annotated, Literal, Union
 
 import pandas as pd
 from cachetools import LFUCache, cached
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Security
 from pandas import Timestamp
 from pydantic import BaseModel, Field, model_serializer
 from pydantic_core.core_schema import (
@@ -16,6 +16,8 @@ from pydantic_core.core_schema import (
     SerializerFunctionWrapHandler,
 )
 
+from exchange_calendar_service.app.auth import AuthenticatedUser
+from exchange_calendar_service.app.deps import authorization
 from exchange_calendar_service.core.common.context import Context
 from exchange_calendar_service.core.common.util import get_enum_key_literal_type
 from exchange_calendar_service.core.util import find_interval
@@ -138,7 +140,9 @@ def get_router(exchanges_enum: type[Enum]):
         operation_id="getExchanges",
         responses={200: {"description": "List of supported MICs."}},
     )
-    async def get_exchanges() -> SupportedMICs:
+    async def get_exchanges(
+        _: AuthenticatedUser = Security(authorization, scopes=["exchanges:read"]),
+    ) -> SupportedMICs:
         """
         Return the list of supported MICs.
         """
@@ -152,7 +156,10 @@ def get_router(exchanges_enum: type[Enum]):
         operation_id="getExchangeInfo",
         responses={200: {"description": "Information about a single exchange."}},
     )
-    async def get_exchange_info(mic: SupportedMIC) -> ExchangeInfo:
+    async def get_exchange_info(
+        mic: SupportedMIC,
+        _: AuthenticatedUser = Security(authorization, scopes=["exchange:info:read"]),
+    ) -> ExchangeInfo:
         """
         Return information about a single exchange.
         """
@@ -535,6 +542,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         exclude_tags: Annotated[list[Tags] | None, Query()] = None,
         order: Literal["asc", "desc"] = "asc",
         limit: Annotated[int, Field(gt=0)] | None = None,
+        _: AuthenticatedUser = Security(authorization, scopes=["exchange:days:read"]),
     ) -> tuple[Day, ...]:
         """
         Describe the given day on the given exchange.
@@ -586,6 +594,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
     async def get_exchange_day(
         mic: SupportedMIC,
         day: dt.date,
+        _: AuthenticatedUser = Security(authorization, scopes=["exchange:days:read"]),
     ) -> Day:
         """
         Describe the given day on the given exchange.
@@ -630,6 +639,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         exclude_tags: Annotated[list[Tags] | None, Query()] = None,
         limit: Annotated[int, Field(gt=0)] | None = None,
         order: Literal["asc", "desc"] = "asc",
+        _: AuthenticatedUser = Security(authorization, scopes=["exchange:days:read"]),
     ) -> tuple[Day, ...]:
         """
         Describe the given day on the given exchange.
@@ -736,6 +746,7 @@ Note: The `limit` parameter applies to the number of date records returned. Each
         exclude_tags: Annotated[list[Tags] | None, Query()] = None,
         order: Literal["asc", "desc"] = "asc",
         limit: Annotated[int, Field(gt=0)] | None = None,
+        _: AuthenticatedUser = Security(authorization, scopes=["days:read"]),
     ) -> MultiExchangeDays:
         """
         Get days for multiple exchanges in a date range.
@@ -793,6 +804,7 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
             Query(title="MIC codes", description="One or more MIC codes to query."),
         ],
         day: dt.date,
+        _: AuthenticatedUser = Security(authorization, scopes=["days:read"]),
     ) -> MultiExchangeDay:
         """
         Get a specific day for multiple exchanges.
@@ -849,6 +861,7 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
         exclude_tags: Annotated[list[Tags] | None, Query()] = None,
         limit: Annotated[int, Field(gt=0)] | None = None,
         order: Literal["asc", "desc"] = "asc",
+        _: AuthenticatedUser = Security(authorization, scopes=["days:read"]),
     ) -> MultiExchangeDays:
         """
         Get the next days matching criteria relative to a day for multiple exchanges.
