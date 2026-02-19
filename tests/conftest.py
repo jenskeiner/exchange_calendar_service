@@ -23,9 +23,9 @@ def test_settings():
 @pytest.fixture
 def client(test_settings) -> TestClient:
     """Create test client with test settings injected."""
-    from exchange_calendar_service.app.app import app
+    from exchange_calendar_service.app.app import get_app
 
-    return TestClient(app(test_settings))
+    return TestClient(get_app(test_settings))
 
 
 @pytest.fixture
