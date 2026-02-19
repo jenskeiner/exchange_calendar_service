@@ -9,7 +9,7 @@ calendars.
 Starting the web service app in the foreground, listening on http://localhost:8080:
 
 ```bash
-uv run python -m exchange_calendar_service.app
+uv run python -m exchange_calendar_service
 ```
 
 ## Config
