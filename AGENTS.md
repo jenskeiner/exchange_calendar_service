@@ -14,25 +14,15 @@ uv run pytest -v tests/ --cov=exchange_calendar_service --cov-fail-under=80
 
 ### Manual Testing
 
-- Start service in background:
+Start service in background, wait 10 seconds, query the service using curl, then stop the service. Pattern:
 
 ```bash
-uv run python -m exchange_calendar_service &
+uv run python -m exchange_calendar_service > /dev/null 2>&1 &
+PID=$!
+sleep 10
+curl -s "http://localhost:8080/v1/..."
+kill $PID 2>/dev/null || true
 ```
-
-- Wait 15 seconds:
-
-```bash
-sleep 15
-```
-
-- Query the service using curl on http://localhost:8080. For example:
-
-```bash
-curl http://localhost:8080/v1/exchanges
-```
-
-- When finished with testing, stop the service.
 
 ## Coding
 
