@@ -4,15 +4,61 @@ A library and an HTTP web service based
 on [exchange_calendars_extensions](https://github.com/jenskeiner/exchange_calendars_extensions) to query exchange
 calendars.
 
-## Build/Run
+## Running and Testing
 
-Starting the web service app in the foreground, listening on http://localhost:8080:
+### Automated Tests
 
 ```bash
-uv run python -m exchange_calendar_service
+uv run pytest -v tests/ --cov=exchange_calendar_service --cov-fail-under=80
 ```
 
-## Config
+### Manual Testing
+
+- Start service in background:
+
+```bash
+uv run python -m exchange_calendar_service &
+```
+
+- Wait 15 seconds:
+
+```bash
+sleep 15
+```
+
+- Query the service using curl on http://localhost:8080. For example:
+
+```bash
+curl http://localhost:8080/v1/exchanges
+```
+
+- When finished with testing, stop the service.
+
+## Coding
+
+Use Red/Green TDD. Applies also when fixing a bug, i.e. write a test that reproduces the bug first.
+
+When making changes:
+
+- write tests first
+- make code changes
+- run all tests
+- fix issues iteratively until all tests pass
+- update any related documentation, i.e. this file and README.md, where necessary.
+
+## Conventions
+
+- Python 3.12+, type hints required everywhere.
+- Comments only for non-obvious logic.
+- Pydantic for config/data classes.
+- Prefer tuples over list for immutable, ordered collections.
+- `gh` CLI for GitHub auth (no separate token)
+- Avoid using @dataclass, use Pydantic instead
+- Test are grouped into files matching the directory structure of the code unde rtest.
+- Test classes group tests that are related to the same functionality.
+- Prefer immutable collections (e.g. tuples) over mutable ones (e.g. lists) where possible.
+
+## Configuration
 
 Configuration of the app is done via [Settings](src/exchange_calendar_service/app/settings.py), a Pydantic Settings.
 
@@ -36,27 +82,3 @@ Init functions can be provided via two mechanisms:
 
 Both mechanisms can be used together - the environment variable callable (if set) is called first, followed by all
 discovered entrypoints.
-
-## Conventions
-
-- Python 3.12+, type hints required everywhere
-- When making changes:
-    - make code changes
-    - run all tests
-    - fix issues iteratively until all pass
-    - update any related documentation, i.e. this file and README.md, where necessary.
-- Comments only for non-obvious logic
-- Pydantic for config/data classes
-- `gh` CLI for GitHub auth (no separate token)
-- Avoid using @dataclass, use Pydantic instead
-- Test are grouped into files matching the directory structure of the code unde rtest.
-- Test classes group tests that are related to the same functionality.
-- Prefer immutable collections (e.g. tuples) over mutable ones (e.g. lists) where possible.
-
-## Testing
-
-```bash
-uv run pytest -v tests/ --cov=exchange_calendar_service --cov-fail-under=80
-```
-
-Coverage gate: 80% minimum.
