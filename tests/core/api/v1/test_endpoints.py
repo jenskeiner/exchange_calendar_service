@@ -77,7 +77,7 @@ def _filter_days(
 
 
 @pytest.mark.usefixtures("client")
-class TestListExchangeDays:
+class TestListExchangeCalendarDays:
     """Tests for GET /v1/exchanges/{mic}/days endpoint."""
 
     @pytest.mark.parametrize("mic", ["XAMS", "XLON", "XSWX", "BVMF"])
@@ -482,7 +482,7 @@ class TestListExchangeDays:
 
 
 @pytest.mark.usefixtures("client")
-class TestGetExchangeDay:
+class TestGetExchangeCalendarDay:
     """Tests for GET /v1/exchanges/{mic}/days/{day} endpoint."""
 
     @pytest.mark.parametrize(
@@ -745,7 +745,7 @@ class TestSerializationKeyOrder:
 
 
 @pytest.mark.usefixtures("client")
-class TestListNextExchangeDays:
+class TestListNextExchangeCalendarDays:
     """Tests for GET /v1/exchanges/{mic}/days/{day}/next endpoint."""
 
     @pytest.mark.parametrize(
@@ -1259,7 +1259,7 @@ class TestListNextExchangeDays:
 
 
 @pytest.mark.usefixtures("client")
-class TestListDaysMultiExchange:
+class TestListCalendarDaysMultiExchange:
     """Tests for GET /v1/days endpoint (multi-exchange)."""
 
     def test_two_exchanges_basic(self, client):
@@ -1560,7 +1560,7 @@ class TestListDaysMultiExchange:
 
 
 @pytest.mark.usefixtures("client")
-class TestGetDayMultiExchange:
+class TestGetCalendarDayMultiExchange:
     """Tests for GET /v1/days/{day} endpoint (multi-exchange)."""
 
     def test_two_exchanges_business_day(self, client):
@@ -1670,7 +1670,7 @@ class TestGetDayMultiExchange:
 
 
 @pytest.mark.usefixtures("client")
-class TestListNextDaysMultiExchange:
+class TestListNextCalendarDaysMultiExchange:
     """Tests for GET /v1/days/{day}/next endpoint (multi-exchange)."""
 
     def test_forward_two_exchanges(self, client):
@@ -1892,7 +1892,7 @@ class TestListNextDaysMultiExchange:
 
 
 @pytest.mark.usefixtures("client")
-class TestListInstants:
+class TestListDays:
     """Tests for GET /v1/instants endpoint."""
 
     def test_basic_request_orient_list(self, client):

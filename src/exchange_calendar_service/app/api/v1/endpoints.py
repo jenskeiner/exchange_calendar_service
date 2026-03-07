@@ -67,22 +67,22 @@ class Tags(str, Enum):
     REGULAR = "regular"
 
 
-class Session(BaseModel):
+class CalendarDaySession(BaseModel):
     open: dt.time = Field(title="The start of the trading session (HH:MM:SS).")
     close: dt.time = Field(title="The end of the trading session (HH:MM:SS).")
 
 
-class BusinessDay(BaseModel):
+class BusinessCalendarDay(BaseModel):
     date: dt.date = Field(title="The date of the day in ISO format (YYYY-MM-DD).")
     name: str | None = Field(title="The name of the day.", default=None)
     business_day: Literal[True] = Field(
         title="Indicates that the day is a business day.", default=True
     )
-    session: Session = Field(title="The trading session.")
+    session: CalendarDaySession = Field(title="The trading session.")
     tags: set[Tags] = Field(title="A set of tags associated with the day.")
 
 
-class NonBusinessDay(BaseModel):
+class NonBusinessCalendarDay(BaseModel):
     date: dt.date = Field(title="The date of the day in ISO format (YYYY-MM-DD).")
     name: str | None = Field(title="The name of the day.", default=None)
     business_day: Literal[False] = Field(
@@ -91,10 +91,12 @@ class NonBusinessDay(BaseModel):
     tags: set[Tags] = Field(title="A set of tags associated with the day.")
 
 
-Day = Annotated[Union[BusinessDay, NonBusinessDay], Field(discriminator="business_day")]
+CalendarDay = Annotated[
+    Union[BusinessCalendarDay, NonBusinessCalendarDay],
+    Field(discriminator="business_day"),
+]
 
 
-# Instants API models
 class Interval(BaseModel):
     """Half-open interval [start, end) in the target timezone."""
 
@@ -142,10 +144,10 @@ def get_router(exchanges_enum: type[Enum]):
     SupportedMICs = Annotated[tuple[SupportedMIC, ...], Field(examples=[MICS[:10]])]
 
     # Multi-exchange response types
-    MultiExchangeDay = dict[str, Day]
+    MultiExchangeDay = dict[str, CalendarDay]
     MultiExchangeDays = list[MultiExchangeDay]
 
-    class BusinessDayInstant(BaseModel):
+    class BusinessDay(BaseModel):
         """Business day with trading session."""
 
         mic: SupportedMIC
@@ -155,7 +157,7 @@ def get_router(exchanges_enum: type[Enum]):
         business_day: Literal[True] = True
         tags: set[Tags] = Field(default_factory=set)
 
-    class NonBusinessDayInstant(BaseModel):
+    class NonBusinessDay(BaseModel):
         """Non-business day (holiday/weekend) - no session."""
 
         mic: SupportedMIC
@@ -164,13 +166,13 @@ def get_router(exchanges_enum: type[Enum]):
         business_day: Literal[False] = False
         tags: set[Tags] = Field(default_factory=set)
 
-    DayInstant = Annotated[
-        Union[BusinessDayInstant, NonBusinessDayInstant],
+    Day = Annotated[
+        Union[BusinessDay, NonBusinessDay],
         Field(discriminator="business_day"),
     ]
 
-    DayInstantsByExchange = dict[SupportedMIC, list[DayInstant]]
-    DayInstantsList = list[DayInstant]
+    DaysByExchange = dict[SupportedMIC, list[Day]]
+    DaysList = list[Day]
 
     router = APIRouter()
 
@@ -219,7 +221,7 @@ def get_router(exchanges_enum: type[Enum]):
         exclude_tags: frozenset[Tags] | None = None,
         limit: Annotated[int, Field(gt=0)] | None = None,
         order: Literal["asc", "desc"] = "asc",
-    ) -> tuple[Day, ...]:
+    ) -> tuple[CalendarDay, ...]:
         """
         Core method to return days with the desired properties for a given MIC and date range.
 
@@ -263,7 +265,7 @@ def get_router(exchanges_enum: type[Enum]):
         c = Context().cache.get(mic)
 
         # Matching days accumulated here.
-        days: dict[dt.date, Day] = dict()
+        days: dict[dt.date, CalendarDay] = dict()
 
         # Chunk size for incremental search.
         CHUNK_SIZE_DAYS = 30
@@ -302,7 +304,7 @@ def get_router(exchanges_enum: type[Enum]):
     def _get_days0(
         business_day: bool | None,
         c,
-        days: dict[date, BusinessDay | NonBusinessDay],
+        days: dict[date, BusinessCalendarDay | NonBusinessCalendarDay],
         end: Timestamp,
         is_included: Callable[..., bool],
         start: Timestamp,
@@ -354,7 +356,7 @@ def get_router(exchanges_enum: type[Enum]):
                     holidays.next()
 
                 if is_included(tags, False):
-                    days[d] = NonBusinessDay(
+                    days[d] = NonBusinessCalendarDay(
                         date=d.to_pydatetime().date(),
                         name=name,
                         tags=tags,
@@ -408,7 +410,7 @@ def get_router(exchanges_enum: type[Enum]):
                         tags = {Tags.HOLIDAY}
 
                         if is_included(tags, False):
-                            days[d] = NonBusinessDay(
+                            days[d] = NonBusinessCalendarDay(
                                 date=d.to_pydatetime().date(),
                                 name=name,
                                 tags=tags,
@@ -418,7 +420,7 @@ def get_router(exchanges_enum: type[Enum]):
 
                     # Assume regular trading day for now.
                     tags |= {Tags.REGULAR}
-                    session = Session(
+                    session = CalendarDaySession(
                         open=find_interval(c.open_times0, d)[1],
                         close=find_interval(c.close_times0, d)[1],
                     )
@@ -464,7 +466,7 @@ def get_router(exchanges_enum: type[Enum]):
                         tags |= {Tags.MONTH_END}
 
                     if is_included(tags, True):
-                        days[d] = BusinessDay(
+                        days[d] = BusinessCalendarDay(
                             date=d.to_pydatetime().date(),
                             name=name,
                             session=session,
@@ -512,7 +514,7 @@ def get_router(exchanges_enum: type[Enum]):
             List of dicts, each mapping MIC to Day for a specific date.
         """
         # Get days for each MIC
-        mic_to_days: dict[SupportedMIC, dict[dt.date, Day]] = {}
+        mic_to_days: dict[SupportedMIC, dict[dt.date, CalendarDay]] = {}
         for mic in mics:
             days = _get_days(
                 mic,
@@ -585,7 +587,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         order: Literal["asc", "desc"] = "asc",
         limit: Annotated[int, Field(gt=0)] | None = None,
         _: AuthenticatedUser = Security(authorization, scopes=["exchange:days:read"]),
-    ) -> tuple[Day, ...]:
+    ) -> tuple[CalendarDay, ...]:
         """
         Describe the given day on the given exchange.
 
@@ -637,7 +639,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         mic: SupportedMIC,
         day: dt.date,
         _: AuthenticatedUser = Security(authorization, scopes=["exchange:days:read"]),
-    ) -> Day:
+    ) -> CalendarDay:
         """
         Describe the given day on the given exchange.
 
@@ -682,7 +684,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         limit: Annotated[int, Field(gt=0)] | None = None,
         order: Literal["asc", "desc"] = "asc",
         _: AuthenticatedUser = Security(authorization, scopes=["exchange:days:read"]),
-    ) -> tuple[Day, ...]:
+    ) -> tuple[CalendarDay, ...]:
         """
         Describe the given day on the given exchange.
 
@@ -1019,7 +1021,7 @@ The `orient` parameter controls the response format:
         exclude_tags: Annotated[list[Tags] | None, Query()] = None,
         orient: Literal["list", "exchange"] = "list",
         _: AuthenticatedUser = Security(authorization, scopes=["instants:read"]),
-    ) -> DayInstantsList | DayInstantsByExchange:
+    ) -> DaysList | DaysByExchange:
         """
         Get days/sessions overlapping a timestamp range for multiple exchanges.
 
@@ -1071,7 +1073,7 @@ The `orient` parameter controls the response format:
         query_end = pd.Timestamp(end)
 
         # Collect results for each MIC.
-        results_by_mic: dict[SupportedMIC, list[DayInstant]] = {mic: [] for mic in mics}
+        results_by_mic: dict[SupportedMIC, list[Day]] = {mic: [] for mic in mics}
 
         for mic in mics:
             c = Context().cache.get(mic)
@@ -1125,10 +1127,10 @@ The `orient` parameter controls the response format:
                 day_interval_start = day_start.tz_convert(target_tz).to_pydatetime()
                 day_interval_end = day_end.tz_convert(target_tz).to_pydatetime()
 
-                day_instant: DayInstant
+                day_instant: Day
 
                 # Create DayInstant
-                if isinstance(day, BusinessDay):
+                if isinstance(day, BusinessCalendarDay):
                     # Calculate session_interval in target timezone. Session times are wall-clock times in exchange
                     # timezone.
                     session_open_time = day.session.open
@@ -1153,7 +1155,7 @@ The `orient` parameter controls the response format:
                         .to_pydatetime()
                     )
 
-                    day_instant = BusinessDayInstant(
+                    day_instant = BusinessDay(
                         mic=mic,
                         day_interval=Interval(
                             start=day_interval_start,
@@ -1167,7 +1169,7 @@ The `orient` parameter controls the response format:
                         tags=day.tags,
                     )
                 else:
-                    day_instant = NonBusinessDayInstant(
+                    day_instant = NonBusinessDay(
                         mic=mic,
                         day_interval=Interval(
                             start=day_interval_start,
