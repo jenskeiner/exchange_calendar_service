@@ -33,7 +33,7 @@ dependencies = [
     "pyyaml>=6,<7",
     "pydantic-settings>=2,<3",
     "myers>1,<2",
-    "cachetools>6,<7",
+    "cachetools>6,<8",
     "pytz",
     "uvicorn>=0.40.0,<1",
 ]
