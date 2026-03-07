@@ -1892,8 +1892,8 @@ class TestListNextCalendarDaysMultiExchange:
 
 
 @pytest.mark.usefixtures("client")
-class TestListDays:
-    """Tests for GET /v1/instants endpoint."""
+class TestGetSlice:
+    """Tests for GET /v1/slice endpoint."""
 
     def test_basic_request_orient_list(self, client):
         """Test basic request with orient=list (default)."""
@@ -1905,7 +1905,7 @@ class TestListDays:
             ("start", start),
             ("end", end),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -1941,7 +1941,7 @@ class TestListDays:
             ("end", end),
             ("orient", "exchange"),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -1998,7 +1998,7 @@ class TestListDays:
             ("end", end),
             ("tz", tz),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -2018,7 +2018,7 @@ class TestListDays:
             ("start", start),
             ("end", end),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -2034,7 +2034,7 @@ class TestListDays:
             ("start", start),
             ("end", end),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         # Should return an error
         assert response.status_code == HTTPStatus.BAD_REQUEST
@@ -2056,7 +2056,7 @@ class TestListDays:
             ("end", end),
             ("business_day", business_day),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -2083,7 +2083,7 @@ class TestListDays:
             ("end", end),
             ("business_day", "true"),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -2106,7 +2106,7 @@ class TestListDays:
             ("end", end),
             ("business_day", "true"),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -2124,7 +2124,7 @@ class TestListDays:
             ("end", end),
             ("business_day", "false"),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -2152,7 +2152,7 @@ class TestListDays:
             ("start", start),
             ("end", end),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -2216,7 +2216,7 @@ class TestListDays:
             ("end", end),
             ("include_tags", "holiday"),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -2235,7 +2235,7 @@ class TestListDays:
             ("end", end),
             ("exclude_tags", "weekend"),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -2255,7 +2255,7 @@ class TestListDays:
             ("start", start),
             ("end", end),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()
@@ -2279,7 +2279,7 @@ class TestListDays:
             ("end", end),
             ("orient", "exchange"),
         ]
-        response = client.get("/v1/instants", params=params)
+        response = client.get("/v1/slice", params=params)
 
         assert response.status_code == HTTPStatus.OK
         result = response.json()

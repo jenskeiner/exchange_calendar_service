@@ -178,7 +178,7 @@ def get_router(exchanges_enum: type[Enum]):
 
     @router.get(
         "/exchanges",
-        tags=["Reference"],
+        tags=["Reference Data"],
         summary="Get a list of supported exchange codes, i.e. MICs.",
         description="Returns the list of supported MICs.",
         operation_id="getExchanges",
@@ -194,7 +194,7 @@ def get_router(exchanges_enum: type[Enum]):
 
     @router.get(
         "/exchanges/{mic}",
-        tags=["Reference"],
+        tags=["Reference Data"],
         summary="Get information about a single exchange.",
         description="Returns information about a single exchange.",
         operation_id="getExchangeInfo",
@@ -212,7 +212,7 @@ def get_router(exchanges_enum: type[Enum]):
 
     # Cache return values. Allow for two times the number of operating MICs.
     @cached(LFUCache(maxsize=2 * len(MICS)))
-    def _get_days(
+    def _get_calendar_days(
         mic: SupportedMIC,
         start: pd.Timestamp,
         end: pd.Timestamp,
@@ -272,7 +272,7 @@ def get_router(exchanges_enum: type[Enum]):
 
         if limit is None:
             # No limit: process entire range at once.
-            _get_days0(business_day, c, days, end, is_included, start)
+            _get_calendar_days0(business_day, c, days, end, is_included, start)
         else:
             # Process in chunks until limit is reached or range exhausted.
             if order == "asc":
@@ -281,7 +281,7 @@ def get_router(exchanges_enum: type[Enum]):
                     chunk_end = min(
                         chunk_start + pd.Timedelta(days=CHUNK_SIZE_DAYS - 1), end
                     )
-                    _get_days0(
+                    _get_calendar_days0(
                         business_day, c, days, chunk_end, is_included, chunk_start
                     )
                     chunk_start = chunk_end + pd.Timedelta(days=1)
@@ -291,7 +291,7 @@ def get_router(exchanges_enum: type[Enum]):
                     chunk_start = max(
                         chunk_end - pd.Timedelta(days=CHUNK_SIZE_DAYS - 1), start
                     )
-                    _get_days0(
+                    _get_calendar_days0(
                         business_day, c, days, chunk_end, is_included, chunk_start
                     )
                     chunk_end = chunk_start - pd.Timedelta(days=1)
@@ -301,7 +301,7 @@ def get_router(exchanges_enum: type[Enum]):
             for d in itertools.islice(sorted(days, reverse=order == "desc"), limit)
         )
 
-    def _get_days0(
+    def _get_calendar_days0(
         business_day: bool | None,
         c,
         days: dict[date, BusinessCalendarDay | NonBusinessCalendarDay],
@@ -473,7 +473,7 @@ def get_router(exchanges_enum: type[Enum]):
                             tags=tags,
                         )
 
-    def _get_days_multi(
+    def _get_calendar_days_multi(
         mics: tuple[SupportedMIC, ...],
         start: pd.Timestamp,
         end: pd.Timestamp,
@@ -516,7 +516,7 @@ def get_router(exchanges_enum: type[Enum]):
         # Get days for each MIC
         mic_to_days: dict[SupportedMIC, dict[dt.date, CalendarDay]] = {}
         for mic in mics:
-            days = _get_days(
+            days = _get_calendar_days(
                 mic,
                 start,
                 end,
@@ -555,7 +555,7 @@ def get_router(exchanges_enum: type[Enum]):
 
     @router.get(
         "/exchanges/{mic}/days",
-        tags=["Single Exchange"],
+        tags=["Calendar Days"],
         summary="Get days in a date range that match criteria.",
         description=r"""For an  exchange, this endpoint returns the list of days in a given date range that match the given criteria.
 
@@ -615,7 +615,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         tuple of Day
             The matching days for the given MIC and date range.
         """
-        return _get_days(
+        return _get_calendar_days(
             mic,
             pd.Timestamp(start),
             pd.Timestamp(end),
@@ -628,7 +628,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
 
     @router.get(
         "/exchanges/{mic}/days/{day}",
-        tags=["Single Exchange"],
+        tags=["Calendar Days"],
         summary="Describe a day on an exchange.",
         description="Returns the description of the given day on the given exchange.",
         operation_id="getExchangeDay",
@@ -655,13 +655,13 @@ Note: The `limit` parameter applies to the selected days in the order they are r
         Day
             The description of the given day on the given exchange.
         """
-        days = _get_days(mic, pd.Timestamp(day), pd.Timestamp(day))
+        days = _get_calendar_days(mic, pd.Timestamp(day), pd.Timestamp(day))
         assert len(days) == 1
         return days[0]
 
     @router.get(
         "/exchanges/{mic}/days/{day}/next",
-        tags=["Single Exchange"],
+        tags=["Calendar Days"],
         summary="Get the next days matching criteria relative to a day on an exchange.",
         description="Get the next days matching criteria relative to a day on an exchange.",
         operation_id="listNextExchangeDays",
@@ -733,7 +733,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
             end = pd.Timestamp(end) if end else pd.Timestamp.max.normalize()
         order0: Literal["asc", "desc"] = "asc" if direction == "forward" else "desc"
 
-        result = _get_days(
+        result = _get_calendar_days(
             mic,
             start,
             end,
@@ -751,7 +751,7 @@ Note: The `limit` parameter applies to the selected days in the order they are r
 
     @router.get(
         "/days",
-        tags=["Multiple Exchanges"],
+        tags=["Calendar Days"],
         summary="Get days in a date range that match criteria for multiple exchanges.",
         description=r"""For multiple exchanges, this endpoint returns the list of days in a given date range that match the given criteria.
 
@@ -819,7 +819,7 @@ Note: The `limit` parameter applies to the number of date records returned. Each
         MultiExchangeDays
             List of dicts, each mapping MIC to Day for a specific date.
         """
-        return _get_days_multi(
+        return _get_calendar_days_multi(
             tuple(mics),
             pd.Timestamp(start),
             pd.Timestamp(end),
@@ -832,7 +832,7 @@ Note: The `limit` parameter applies to the number of date records returned. Each
 
     @router.get(
         "/days/{day}",
-        tags=["Multiple Exchanges"],
+        tags=["Calendar Days"],
         summary="Get a specific day for multiple exchanges.",
         description=r"""For multiple exchanges, returns the description of the given day.
 
@@ -865,7 +865,7 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
         MultiExchangeDay
             Dict mapping MIC to Day for the specific date.
         """
-        days = _get_days_multi(
+        days = _get_calendar_days_multi(
             tuple(mics),
             pd.Timestamp(day),
             pd.Timestamp(day),
@@ -880,7 +880,7 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
 
     @router.get(
         "/days/{day}/next",
-        tags=["Multiple Exchanges"],
+        tags=["Calendar Days"],
         summary="Get the next days matching criteria relative to a day for multiple exchanges.",
         description="Get the next days matching criteria relative to a day for multiple exchanges.",
         operation_id="listNextDays",
@@ -955,7 +955,7 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
             end = pd.Timestamp(end) if end else pd.Timestamp.max.normalize()
         order0: Literal["asc", "desc"] = "asc" if direction == "forward" else "desc"
 
-        result = _get_days_multi(
+        result = _get_calendar_days_multi(
             tuple(mics),
             start,
             end,
@@ -972,8 +972,8 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
         return result
 
     @router.get(
-        "/instants",
-        tags=["Instants"],
+        "/slice",
+        tags=["Time Slice"],
         summary="Get days/sessions overlapping a timestamp range for multiple exchanges.",
         description=r"""For multiple exchanges, returns days/sessions that overlap with the given timestamp range.
 
@@ -981,7 +981,7 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
 
 The `start` and `end` parameters are ISO 8601 timestamps with timezone. The range is half-open: [start, end).
 
-The `tz` parameter specifies the target timezone for returned instants. Can be:
+The `tz` parameter specifies the target timezone for returned days. Can be:
 - An IANA timezone name (e.g., "UTC", "America/New_York", "Europe/London")
 - A UTC offset (e.g., "+00:00", "+05:30", "-08:00")
 
@@ -997,7 +997,7 @@ The `orient` parameter controls the response format:
 - `list` (default): Returns a flat list sorted by day_interval.start.
 - `exchange`: Returns a dict mapping MIC to list of days (includes empty lists for MICs with no matches).
 """,
-        operation_id="listInstants",
+        operation_id="getTimeSlice",
         responses={
             200: {
                 "description": "List of days/sessions matching the criteria for multiple exchanges."
@@ -1006,7 +1006,7 @@ The `orient` parameter controls the response format:
         },
         response_model_exclude_none=True,
     )
-    async def list_instants(
+    async def get_time_slice(
         mics: Annotated[
             list[SupportedMIC],
             Query(title="MIC codes", description="One or more MIC codes to query."),
@@ -1020,7 +1020,7 @@ The `orient` parameter controls the response format:
         include_tags: Annotated[list[Tags] | None, Query()] = None,
         exclude_tags: Annotated[list[Tags] | None, Query()] = None,
         orient: Literal["list", "exchange"] = "list",
-        _: AuthenticatedUser = Security(authorization, scopes=["instants:read"]),
+        _: AuthenticatedUser = Security(authorization, scopes=["slices:read"]),
     ) -> DaysList | DaysByExchange:
         """
         Get days/sessions overlapping a timestamp range for multiple exchanges.
@@ -1034,7 +1034,7 @@ The `orient` parameter controls the response format:
         end : datetime
             The end of the query range (exclusive). Must be timezone-aware.
         tz : str or None, optional
-            Target timezone for returned instants. If None, inferred from start/end.
+            Target timezone for returned days. If None, inferred from start/end.
         business_day : bool or None, optional
             If set, only include (non) business days.
         include_tags : list of Tags or None, optional
@@ -1046,7 +1046,7 @@ The `orient` parameter controls the response format:
 
         Returns
         -------
-        DayInstantsList or DayInstantsByExchange
+        DaysList or DaysByExchange
             Days/sessions overlapping the query range, in requested format.
         """
         # Validate start/end are timezone-aware.
@@ -1089,7 +1089,7 @@ The `orient` parameter controls the response format:
             date_end = query_end_exch.ceil("D")
 
             # Get all days in this range. _get_days expects naive timestamps or dates, so we convert to date.
-            days = _get_days(
+            days = _get_calendar_days(
                 mic,
                 pd.Timestamp(date_start.date()),
                 pd.Timestamp(date_end.date()),
@@ -1127,9 +1127,9 @@ The `orient` parameter controls the response format:
                 day_interval_start = day_start.tz_convert(target_tz).to_pydatetime()
                 day_interval_end = day_end.tz_convert(target_tz).to_pydatetime()
 
-                day_instant: Day
+                day: Day
 
-                # Create DayInstant
+                # Create day.
                 if isinstance(day, BusinessCalendarDay):
                     # Calculate session_interval in target timezone. Session times are wall-clock times in exchange
                     # timezone.
@@ -1155,7 +1155,7 @@ The `orient` parameter controls the response format:
                         .to_pydatetime()
                     )
 
-                    day_instant = BusinessDay(
+                    day = BusinessDay(
                         mic=mic,
                         day_interval=Interval(
                             start=day_interval_start,
@@ -1169,7 +1169,7 @@ The `orient` parameter controls the response format:
                         tags=day.tags,
                     )
                 else:
-                    day_instant = NonBusinessDay(
+                    day = NonBusinessDay(
                         mic=mic,
                         day_interval=Interval(
                             start=day_interval_start,
@@ -1179,7 +1179,7 @@ The `orient` parameter controls the response format:
                         tags=day.tags,
                     )
 
-                results_by_mic[mic].append(day_instant)
+                results_by_mic[mic].append(day)
 
         # Sort results by day_interval.start within each MIC.
         for mic in results_by_mic:
