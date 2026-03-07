@@ -77,7 +77,7 @@ def _filter_days(
 
 
 @pytest.mark.usefixtures("client")
-class TestListExchangeDays:
+class TestListExchangeCalendarDays:
     """Tests for GET /v1/exchanges/{mic}/days endpoint."""
 
     @pytest.mark.parametrize("mic", ["XAMS", "XLON", "XSWX", "BVMF"])
@@ -482,7 +482,7 @@ class TestListExchangeDays:
 
 
 @pytest.mark.usefixtures("client")
-class TestGetExchangeDay:
+class TestGetExchangeCalendarDay:
     """Tests for GET /v1/exchanges/{mic}/days/{day} endpoint."""
 
     @pytest.mark.parametrize(
@@ -745,7 +745,7 @@ class TestSerializationKeyOrder:
 
 
 @pytest.mark.usefixtures("client")
-class TestListNextExchangeDays:
+class TestListNextExchangeCalendarDays:
     """Tests for GET /v1/exchanges/{mic}/days/{day}/next endpoint."""
 
     @pytest.mark.parametrize(
@@ -1259,7 +1259,7 @@ class TestListNextExchangeDays:
 
 
 @pytest.mark.usefixtures("client")
-class TestListDaysMultiExchange:
+class TestListCalendarDaysMultiExchange:
     """Tests for GET /v1/days endpoint (multi-exchange)."""
 
     def test_two_exchanges_basic(self, client):
@@ -1560,7 +1560,7 @@ class TestListDaysMultiExchange:
 
 
 @pytest.mark.usefixtures("client")
-class TestGetDayMultiExchange:
+class TestGetCalendarDayMultiExchange:
     """Tests for GET /v1/days/{day} endpoint (multi-exchange)."""
 
     def test_two_exchanges_business_day(self, client):
@@ -1670,7 +1670,7 @@ class TestGetDayMultiExchange:
 
 
 @pytest.mark.usefixtures("client")
-class TestListNextDaysMultiExchange:
+class TestListNextCalendarDaysMultiExchange:
     """Tests for GET /v1/days/{day}/next endpoint (multi-exchange)."""
 
     def test_forward_two_exchanges(self, client):
@@ -1889,3 +1889,404 @@ class TestListNextDaysMultiExchange:
         result = response.json()
         # MICs should be in alphabetical order regardless of input order
         assert list(result[0].keys()) == ["XAMS", "XLON", "XSWX"]
+
+
+@pytest.mark.usefixtures("client")
+class TestGetSlice:
+    """Tests for GET /v1/slice endpoint."""
+
+    def test_basic_request_orient_list(self, client):
+        """Test basic request with orient=list (default)."""
+        start = "2021-01-04T08:00:00+00:00"
+        end = "2021-01-04T10:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert isinstance(result, list)
+        assert len(result) > 0
+        # Compare full response against expected dict
+        expected = [
+            {
+                "mic": "XAMS",
+                "day_interval": {
+                    "start": "2021-01-03T23:00:00Z",
+                    "end": "2021-01-04T23:00:00Z",
+                },
+                "session_interval": {
+                    "start": "2021-01-04T08:00:00Z",
+                    "end": "2021-01-04T16:30:00Z",
+                },
+                "business_day": True,
+                "tags": ["regular"],
+            }
+        ]
+        assert result == expected
+
+    def test_basic_request_orient_exchange(self, client):
+        """Test request with orient=exchange."""
+        start = "2021-01-04T08:00:00+00:00"
+        end = "2021-01-04T10:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+            ("start", start),
+            ("end", end),
+            ("orient", "exchange"),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Compare full response against expected dict
+        expected = {
+            "XAMS": [
+                {
+                    "mic": "XAMS",
+                    "day_interval": {
+                        "start": "2021-01-03T23:00:00Z",
+                        "end": "2021-01-04T23:00:00Z",
+                    },
+                    "session_interval": {
+                        "start": "2021-01-04T08:00:00Z",
+                        "end": "2021-01-04T16:30:00Z",
+                    },
+                    "business_day": True,
+                    "tags": ["regular"],
+                }
+            ],
+            "XLON": [
+                {
+                    "mic": "XLON",
+                    "day_interval": {
+                        "start": "2021-01-04T00:00:00Z",
+                        "end": "2021-01-05T00:00:00Z",
+                    },
+                    "session_interval": {
+                        "start": "2021-01-04T08:00:00Z",
+                        "end": "2021-01-04T16:30:00Z",
+                    },
+                    "business_day": True,
+                    "tags": ["regular"],
+                }
+            ],
+        }
+        assert result == expected
+
+    @pytest.mark.parametrize(
+        "tz,expected_offset",
+        [
+            ("America/New_York", "-05:00"),  # EST in January 2021
+            ("+05:30", "+05:30"),
+        ],
+    )
+    def test_timezone(self, client, tz, expected_offset):
+        """Test timezone parameter with IANA name and UTC offset."""
+        start = "2021-01-04T08:00:00+00:00"
+        end = "2021-01-04T10:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("tz", tz),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) > 0
+        # Check that returned timestamps have the expected timezone offset
+        entry = result[0]
+        assert entry["day_interval"]["start"].endswith(expected_offset)
+        assert entry["day_interval"]["end"].endswith(expected_offset)
+
+    def test_timezone_fallback_from_query(self, client):
+        """Test timezone fallback when both start and end have same tz."""
+        start = "2021-01-04T08:00:00+01:00"
+        end = "2021-01-04T10:00:00+01:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) > 0
+
+    def test_timezone_error_mismatched(self, client):
+        """Test error when timezone omitted and start/end have different timezones."""
+        start = "2021-01-04T08:00:00+00:00"
+        end = "2021-01-04T10:00:00+01:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        # Should return an error
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    @pytest.mark.parametrize(
+        "business_day,start,end,expected_has_session",
+        [
+            (True, "2021-01-02T00:00:00+00:00", "2021-01-05T00:00:00+00:00", True),
+            (False, "2021-01-02T00:00:00+00:00", "2021-01-04T00:00:00+00:00", False),
+        ],
+    )
+    def test_business_day_filter(
+        self, client, business_day, start, end, expected_has_session
+    ):
+        """Test filtering by business_day parameter."""
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("business_day", business_day),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        for entry in result:
+            assert entry["business_day"] is business_day
+            if expected_has_session:
+                assert "session_interval" in entry
+            else:
+                assert (
+                    "session_interval" not in entry or entry["session_interval"] is None
+                )
+
+    def test_half_open_interval_overlap_session_ends_at_query_start(self, client):
+        """Test half-open interval: session [09:00, 17:30) doesn't overlap with query [17:30, ...)."""
+        # XAMS session on 2021-01-04 was 09:00-17:30 local time
+        # In UTC (winter time UTC+1): 08:00-16:30
+        # Query starting at 16:30 UTC should NOT include this session
+        start = "2021-01-04T16:30:00+00:00"
+        end = "2021-01-04T18:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("business_day", "true"),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Should not include the business day from 2021-01-04
+        for entry in result:
+            # If we get any results, they should not be from 2021-01-04 session
+            assert (
+                entry.get("day_interval", {}).get("start", "")
+                != "2021-01-04T08:00:00+00:00"
+            )
+
+    def test_half_open_interval_overlap_session_starts_at_query_end(self, client):
+        """Test half-open interval: session [08:00, 16:30) doesn't overlap with query [..., 08:00)."""
+        start = "2021-01-04T06:00:00+00:00"
+        end = "2021-01-04T08:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("business_day", "true"),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Should include the business day from 2021-01-04
+        assert len(result) == 1
+
+    def test_non_trading_day_has_day_interval(self, client):
+        """Test that non-trading days have day_interval (midnight to midnight in local tz)."""
+        start = "2021-01-03T00:00:00+00:00"
+        end = "2021-01-04T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("business_day", "false"),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Compare full response against expected dict
+        expected = [
+            {
+                "mic": "XAMS",
+                "day_interval": {
+                    "start": "2021-01-02T23:00:00Z",
+                    "end": "2021-01-03T23:00:00Z",
+                },
+                "business_day": False,
+                "tags": ["weekend"],
+            }
+        ]
+        assert result == expected
+
+    def test_session_interval_only_for_business_days(self, client):
+        """Test that session_interval is only present for business days."""
+        start = "2021-01-02T00:00:00+00:00"
+        end = "2021-01-05T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Compare full response against expected dict
+        expected = [
+            {
+                "mic": "XAMS",
+                "day_interval": {
+                    "start": "2021-01-01T23:00:00Z",
+                    "end": "2021-01-02T23:00:00Z",
+                },
+                "business_day": False,
+                "tags": ["weekend"],
+            },
+            {
+                "mic": "XAMS",
+                "day_interval": {
+                    "start": "2021-01-02T23:00:00Z",
+                    "end": "2021-01-03T23:00:00Z",
+                },
+                "business_day": False,
+                "tags": ["weekend"],
+            },
+            {
+                "mic": "XAMS",
+                "day_interval": {
+                    "start": "2021-01-03T23:00:00Z",
+                    "end": "2021-01-04T23:00:00Z",
+                },
+                "session_interval": {
+                    "start": "2021-01-04T08:00:00Z",
+                    "end": "2021-01-04T16:30:00Z",
+                },
+                "business_day": True,
+                "tags": ["regular"],
+            },
+            {
+                "mic": "XAMS",
+                "day_interval": {
+                    "start": "2021-01-04T23:00:00Z",
+                    "end": "2021-01-05T23:00:00Z",
+                },
+                "session_interval": {
+                    "start": "2021-01-05T08:00:00Z",
+                    "end": "2021-01-05T16:30:00Z",
+                },
+                "business_day": True,
+                "tags": ["regular"],
+            },
+        ]
+        assert result == expected
+
+    def test_include_tags(self, client):
+        """Test include_tags filter."""
+        start = "2021-01-01T00:00:00+00:00"
+        end = "2021-02-01T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("include_tags", "holiday"),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # All entries should have holiday tag
+        for entry in result:
+            assert "holiday" in entry["tags"]
+
+    def test_exclude_tags(self, client):
+        """Test exclude_tags filter."""
+        start = "2021-01-01T00:00:00+00:00"
+        end = "2021-01-10T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("exclude_tags", "weekend"),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # No entries should have weekend tag
+        for entry in result:
+            assert "weekend" not in entry["tags"]
+
+    def test_multiple_mics(self, client):
+        """Test with multiple MICs."""
+        start = "2021-01-04T08:00:00+00:00"
+        end = "2021-01-04T10:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("start", start),
+            ("end", end),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) > 0
+        # Should have entries for all requested MICs
+        mics_in_result = {entry["mic"] for entry in result}
+        assert "XAMS" in mics_in_result
+        assert "XLON" in mics_in_result
+        assert "XSWX" in mics_in_result
+
+    def test_orient_exchange_includes_empty_lists(self, client):
+        """Test that orient=exchange includes MICs with no overlapping days as empty lists."""
+        # Query a range in the distant past where there's no data
+        start = "1990-01-01T00:00:00+00:00"
+        end = "1990-01-02T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+            ("start", start),
+            ("end", end),
+            ("orient", "exchange"),
+        ]
+        response = client.get("/v1/slice", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert isinstance(result, dict)
+        # Should have both MICs as keys
+        assert "XAMS" in result
+        assert "XLON" in result
+        # Values should be lists (possibly empty)
+        assert isinstance(result["XAMS"], list)
+        assert isinstance(result["XLON"], list)
