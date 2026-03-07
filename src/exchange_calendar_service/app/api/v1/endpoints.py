@@ -1,14 +1,17 @@
 import datetime as dt
 import enum
+import heapq
 import itertools
+import re
 from collections.abc import Callable
-from datetime import date
+from datetime import date, datetime, timedelta, timezone, tzinfo
 from enum import Enum
 from typing import Annotated, Literal, Union
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 from cachetools import LFUCache, cached
-from fastapi import APIRouter, Query, Security
+from fastapi import APIRouter, HTTPException, Query, Security
 from pandas import Timestamp
 from pydantic import BaseModel, Field
 
@@ -17,6 +20,39 @@ from exchange_calendar_service.app.deps import authorization
 from exchange_calendar_service.core.common.context import Context
 from exchange_calendar_service.core.common.util import get_enum_key_literal_type
 from exchange_calendar_service.core.util import find_interval
+
+
+def _parse_tz(tz_str: str | None) -> tzinfo:
+    """Parse timezone string to tzinfo.
+
+    Accepts:
+    - IANA names: "UTC", "America/New_York", "Europe/London", etc.
+    - UTC offsets: "+00:00", "+05:30", "-08:00", etc.
+
+    Returns:
+        A tzinfo object (ZoneInfo or fixed-offset timezone).
+
+    Raises:
+        ValueError: If the timezone string is invalid.
+    """
+    if tz_str is None:
+        raise ValueError("Timezone string cannot be None")
+
+    # Try UTC offset format: [+/-]HH:MM.
+    offset_pattern = r"^([+-])(\d{2}):(\d{2})$"
+    match = re.match(offset_pattern, tz_str)
+    if match:
+        sign = 1 if match.group(1) == "+" else -1
+        hours = int(match.group(2))
+        minutes = int(match.group(3))
+        offset = timedelta(hours=sign * hours, minutes=sign * minutes)
+        return timezone(offset)
+
+    # Try IANA timezone name.
+    try:
+        return ZoneInfo(tz_str)
+    except Exception as e:
+        raise ValueError(f"Invalid timezone: {tz_str}") from e
 
 
 @enum.unique
@@ -56,6 +92,14 @@ class NonBusinessDay(BaseModel):
 
 
 Day = Annotated[Union[BusinessDay, NonBusinessDay], Field(discriminator="business_day")]
+
+
+# Instants API models
+class Interval(BaseModel):
+    """Half-open interval [start, end) in the target timezone."""
+
+    start: datetime
+    end: datetime
 
 
 class ExchangeInfo(BaseModel):
@@ -100,6 +144,33 @@ def get_router(exchanges_enum: type[Enum]):
     # Multi-exchange response types
     MultiExchangeDay = dict[str, Day]
     MultiExchangeDays = list[MultiExchangeDay]
+
+    class BusinessDayInstant(BaseModel):
+        """Business day with trading session."""
+
+        mic: SupportedMIC
+        day_interval: Interval
+        session_interval: Interval
+        name: str | None = None
+        business_day: Literal[True] = True
+        tags: set[Tags] = Field(default_factory=set)
+
+    class NonBusinessDayInstant(BaseModel):
+        """Non-business day (holiday/weekend) - no session."""
+
+        mic: SupportedMIC
+        day_interval: Interval
+        name: str | None = None
+        business_day: Literal[False] = False
+        tags: set[Tags] = Field(default_factory=set)
+
+    DayInstant = Annotated[
+        Union[BusinessDayInstant, NonBusinessDayInstant],
+        Field(discriminator="business_day"),
+    ]
+
+    DayInstantsByExchange = dict[SupportedMIC, list[DayInstant]]
+    DayInstantsList = list[DayInstant]
 
     router = APIRouter()
 
@@ -897,5 +968,229 @@ The `mics` parameter is a repeatable query parameter for specifying one or more 
             result = list(reversed(result))
 
         return result
+
+    @router.get(
+        "/instants",
+        tags=["Instants"],
+        summary="Get days/sessions overlapping a timestamp range for multiple exchanges.",
+        description=r"""For multiple exchanges, returns days/sessions that overlap with the given timestamp range.
+
+The `mics` parameter is a repeatable query parameter for specifying one or more MIC codes.
+
+The `start` and `end` parameters are ISO 8601 timestamps with timezone. The range is half-open: [start, end).
+
+The `tz` parameter specifies the target timezone for returned instants. Can be:
+- An IANA timezone name (e.g., "UTC", "America/New_York", "Europe/London")
+- A UTC offset (e.g., "+00:00", "+05:30", "-08:00")
+
+If `tz` is omitted, it will be inferred from the `start` and `end` parameters if they have the same timezone.
+Otherwise, a 400 error is returned.
+
+Filter criteria are optional:
+- `business_day`: If set, only include (non) business days.
+- `include_tags`: If set, only include days that have all of the given tags.
+- `exclude_tags`: If set, exclude days that have any of the given tags.
+
+The `orient` parameter controls the response format:
+- `list` (default): Returns a flat list sorted by day_interval.start.
+- `exchange`: Returns a dict mapping MIC to list of days (includes empty lists for MICs with no matches).
+""",
+        operation_id="listInstants",
+        responses={
+            200: {
+                "description": "List of days/sessions matching the criteria for multiple exchanges."
+            },
+            400: {"description": "Bad request - e.g., ambiguous timezone."},
+        },
+        response_model_exclude_none=True,
+    )
+    async def list_instants(
+        mics: Annotated[
+            list[SupportedMIC],
+            Query(title="MIC codes", description="One or more MIC codes to query."),
+        ],
+        start: datetime,
+        end: datetime,
+        tz: Annotated[
+            str | None, Query(description="Target timezone (IANA name or UTC offset)")
+        ] = None,
+        business_day: bool | None = None,
+        include_tags: Annotated[list[Tags] | None, Query()] = None,
+        exclude_tags: Annotated[list[Tags] | None, Query()] = None,
+        orient: Literal["list", "exchange"] = "list",
+        _: AuthenticatedUser = Security(authorization, scopes=["instants:read"]),
+    ) -> DayInstantsList | DayInstantsByExchange:
+        """
+        Get days/sessions overlapping a timestamp range for multiple exchanges.
+
+        Parameters
+        ----------
+        mics : list of SupportedMIC
+            The MICs of the exchanges to query.
+        start : datetime
+            The start of the query range (inclusive). Must be timezone-aware.
+        end : datetime
+            The end of the query range (exclusive). Must be timezone-aware.
+        tz : str or None, optional
+            Target timezone for returned instants. If None, inferred from start/end.
+        business_day : bool or None, optional
+            If set, only include (non) business days.
+        include_tags : list of Tags or None, optional
+            If set, only include days that have all of the given tags.
+        exclude_tags : list of Tags or None, optional
+            If set, exclude days that have any of the given tags.
+        orient : {'list', 'exchange'}, default 'list'
+            Response format. 'list' returns flat list, 'exchange' returns dict by MIC.
+
+        Returns
+        -------
+        DayInstantsList or DayInstantsByExchange
+            Days/sessions overlapping the query range, in requested format.
+        """
+        # Validate start/end are timezone-aware.
+        if start.tzinfo is None or end.tzinfo is None:
+            raise HTTPException(
+                status_code=400,
+                detail="start and end must be timezone-aware",
+            )
+
+        # Determine target timezone.
+        if tz is None:
+            if start.tzinfo == end.tzinfo:
+                target_tz = start.tzinfo
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Timezone parameter (tz) is required when start and end have different timezones.",
+                )
+        else:
+            target_tz = _parse_tz(tz)
+
+        # Convert start/end to pandas timestamps.
+        query_start = pd.Timestamp(start)
+        query_end = pd.Timestamp(end)
+
+        # Collect results for each MIC.
+        results_by_mic: dict[SupportedMIC, list[DayInstant]] = {mic: [] for mic in mics}
+
+        for mic in mics:
+            c = Context().cache.get(mic)
+            exchange_tz = c.tz
+
+            # Expand query range to cover all potential days. Convert query boundaries to exchange timezone to find date
+            # range.
+            query_start_exch = query_start.tz_convert(exchange_tz)
+            query_end_exch = query_end.tz_convert(exchange_tz)
+
+            # Get the date range in exchange timezone (expand by 1 day on each side to be safe)
+            date_start = query_start_exch.floor("D")
+            date_end = query_end_exch.ceil("D")
+
+            # Get all days in this range. _get_days expects naive timestamps or dates, so we convert to date.
+            days = _get_days(
+                mic,
+                pd.Timestamp(date_start.date()),
+                pd.Timestamp(date_end.date()),
+                business_day=business_day,  # Get all, filter later
+                include_tags=frozenset(include_tags) if include_tags else include_tags,
+                exclude_tags=frozenset(exclude_tags) if exclude_tags else exclude_tags,
+                limit=None,
+                order="asc",
+            )
+
+            # Check each day for overlap with query range
+            for day in days:
+                # Get the date in exchange timezone.
+                day_date = pd.Timestamp(day.date, tz=exchange_tz)
+
+                # Calculate day_interval (midnight to midnight in exchange timezone).
+                day_start = day_date.floor("D")
+                day_end = day_start + pd.Timedelta(days=1)
+
+                # Check if day_interval overlaps with query range. Overlap exists when day_start < query_end and
+                # day_end > query_start
+                if not (day_start < query_end and day_end > query_start):
+                    continue
+
+                # Apply filters.
+                # day_tags = day.tags
+                # if business_day is not None and day.business_day != business_day:
+                #     continue
+                # if include_tags and not any(tag in day_tags for tag in include_tags):
+                #     continue
+                # if exclude_tags and any(tag in day_tags for tag in exclude_tags):
+                #     continue
+
+                # Convert day_interval to target timezone
+                day_interval_start = day_start.tz_convert(target_tz).to_pydatetime()
+                day_interval_end = day_end.tz_convert(target_tz).to_pydatetime()
+
+                day_instant: DayInstant
+
+                # Create DayInstant
+                if isinstance(day, BusinessDay):
+                    # Calculate session_interval in target timezone. Session times are wall-clock times in exchange
+                    # timezone.
+                    session_open_time = day.session.open
+                    session_close_time = day.session.close
+
+                    session_interval_start = (
+                        day_date.replace(
+                            hour=session_open_time.hour,
+                            minute=session_open_time.minute,
+                            second=session_open_time.second,
+                        )
+                        .tz_convert(target_tz)
+                        .to_pydatetime()
+                    )
+                    session_interval_end = (
+                        day_date.replace(
+                            hour=session_close_time.hour,
+                            minute=session_close_time.minute,
+                            second=session_close_time.second,
+                        )
+                        .tz_convert(target_tz)
+                        .to_pydatetime()
+                    )
+
+                    day_instant = BusinessDayInstant(
+                        mic=mic,
+                        day_interval=Interval(
+                            start=day_interval_start,
+                            end=day_interval_end,
+                        ),
+                        session_interval=Interval(
+                            start=session_interval_start,
+                            end=session_interval_end,
+                        ),
+                        name=day.name,
+                        tags=day.tags,
+                    )
+                else:
+                    day_instant = NonBusinessDayInstant(
+                        mic=mic,
+                        day_interval=Interval(
+                            start=day_interval_start,
+                            end=day_interval_end,
+                        ),
+                        name=day.name,
+                        tags=day.tags,
+                    )
+
+                results_by_mic[mic].append(day_instant)
+
+        # Sort results by day_interval.start within each MIC.
+        for mic in results_by_mic:
+            results_by_mic[mic].sort(key=lambda d: d.day_interval.start)
+
+        # Return based on orient.
+        if orient == "exchange":
+            return results_by_mic
+        else:  # orient == "list"
+            return list(
+                heapq.merge(
+                    *results_by_mic.values(), key=lambda d: d.day_interval.start
+                )
+            )
 
     return router

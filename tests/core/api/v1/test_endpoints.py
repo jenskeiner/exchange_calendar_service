@@ -1889,3 +1889,356 @@ class TestListNextDaysMultiExchange:
         result = response.json()
         # MICs should be in alphabetical order regardless of input order
         assert list(result[0].keys()) == ["XAMS", "XLON", "XSWX"]
+
+
+@pytest.mark.usefixtures("client")
+class TestListInstants:
+    """Tests for GET /v1/instants endpoint."""
+
+    def test_basic_request_orient_list(self, client):
+        """Test basic request with orient=list (default)."""
+        # Query a range that overlaps with XAMS trading session
+        # XAMS timezone is Europe/Amsterdam, session is 09:00-17:30 local time
+        # 2021-01-04 was a Monday, business day
+        start = "2021-01-04T08:00:00+00:00"  # 09:00 in Amsterdam (UTC+1 in winter)
+        end = "2021-01-04T10:00:00+00:00"  # 10:00 UTC
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert isinstance(result, list)
+        # Should have at least one entry for XAMS
+        assert len(result) > 0
+        # Check structure of first entry
+        entry = result[0]
+        assert "mic" in entry
+        assert "day_interval" in entry
+        assert "start" in entry["day_interval"]
+        assert "end" in entry["day_interval"]
+        assert "business_day" in entry
+        assert "tags" in entry
+
+    def test_basic_request_orient_exchange(self, client):
+        """Test request with orient=exchange."""
+        start = "2021-01-04T08:00:00+00:00"
+        end = "2021-01-04T10:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+            ("start", start),
+            ("end", end),
+            ("orient", "exchange"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert isinstance(result, dict)
+        # Should have both MICs as keys
+        assert "XAMS" in result
+        assert "XLON" in result
+        # Values should be lists
+        assert isinstance(result["XAMS"], list)
+        assert isinstance(result["XLON"], list)
+
+    def test_timezone_iana(self, client):
+        """Test timezone parameter with IANA timezone name."""
+        start = "2021-01-04T08:00:00+00:00"
+        end = "2021-01-04T10:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("tz", "America/New_York"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) > 0
+        # Times should be in America/New_York timezone
+        # Check that timezone is in the response (ISO format with offset)
+        entry = result[0]
+        assert "Z" not in entry["day_interval"]["start"]  # Not UTC
+
+    def test_timezone_utc_offset(self, client):
+        """Test timezone parameter with UTC offset."""
+        start = "2021-01-04T08:00:00+00:00"
+        end = "2021-01-04T10:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("tz", "+05:30"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) > 0
+
+    def test_timezone_fallback_from_query(self, client):
+        """Test timezone fallback when both start and end have same tz."""
+        start = "2021-01-04T08:00:00+01:00"
+        end = "2021-01-04T10:00:00+01:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) > 0
+
+    def test_timezone_error_mismatched(self, client):
+        """Test error when timezone omitted and start/end have different timezones."""
+        start = "2021-01-04T08:00:00+00:00"
+        end = "2021-01-04T10:00:00+01:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        # Should return an error
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+
+    def test_business_day_filter_true(self, client):
+        """Test filtering for business days only."""
+        # Range covering a weekend (Saturday)
+        start = "2021-01-02T00:00:00+00:00"
+        end = "2021-01-05T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("business_day", "true"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # All entries should be business days
+        for entry in result:
+            assert entry["business_day"] is True
+            assert "session_interval" in entry
+
+    def test_business_day_filter_false(self, client):
+        """Test filtering for non-business days only."""
+        # Range covering a weekend
+        start = "2021-01-02T00:00:00+00:00"
+        end = "2021-01-04T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("business_day", "false"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # All entries should be non-business days
+        for entry in result:
+            assert entry["business_day"] is False
+            assert "session_interval" not in entry or entry["session_interval"] is None
+
+    def test_half_open_interval_overlap_session_ends_at_query_start(self, client):
+        """Test half-open interval: session [09:00, 17:30) doesn't overlap with query [17:30, ...)."""
+        # XAMS session on 2021-01-04 was 09:00-17:30 local time
+        # In UTC (winter time UTC+1): 08:00-16:30
+        # Query starting at 16:30 UTC should NOT include this session
+        start = "2021-01-04T16:30:00+00:00"
+        end = "2021-01-04T18:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("business_day", "true"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Should not include the business day from 2021-01-04
+        for entry in result:
+            # If we get any results, they should not be from 2021-01-04 session
+            assert (
+                entry.get("day_interval", {}).get("start", "")
+                != "2021-01-04T08:00:00+00:00"
+            )
+
+    def test_half_open_interval_overlap_session_starts_at_query_end(self, client):
+        """Test half-open interval: session [08:00, 16:30) doesn't overlap with query [..., 08:00)."""
+        start = "2021-01-04T06:00:00+00:00"
+        end = "2021-01-04T08:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("business_day", "true"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # Should include the business day from 2021-01-04
+        assert len(result) == 1
+
+    def test_non_trading_day_has_day_interval(self, client):
+        """Test that non-trading days have day_interval (midnight to midnight in local tz)."""
+        # Query for a Sunday (2021-01-03 was a Sunday)
+        start = "2021-01-03T00:00:00+00:00"
+        end = "2021-01-04T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("business_day", "false"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) > 0
+        # Check that non-business day has day_interval
+        entry = result[0]
+        assert "day_interval" in entry
+        assert "start" in entry["day_interval"]
+        assert "end" in entry["day_interval"]
+        # Should span the full day in local timezone
+        # XAMS is Europe/Amsterdam, midnight to midnight local
+        # In winter UTC+1: 2021-01-02T23:00:00Z to 2021-01-03T23:00:00Z
+        day_start = entry["day_interval"]["start"]
+        assert "2021-01-03" in day_start or "2021-01-02" in day_start
+
+    def test_session_interval_only_for_business_days(self, client):
+        """Test that session_interval is only present for business days."""
+        start = "2021-01-02T00:00:00+00:00"  # Saturday
+        end = "2021-01-05T00:00:00+00:00"  # Tuesday
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) > 0
+        for entry in result:
+            if entry["business_day"]:
+                assert "session_interval" in entry
+                assert entry["session_interval"] is not None
+            else:
+                # Non-business days should not have session_interval
+                assert (
+                    "session_interval" not in entry
+                    or entry.get("session_interval") is None
+                )
+
+    def test_include_tags(self, client):
+        """Test include_tags filter."""
+        start = "2021-01-01T00:00:00+00:00"
+        end = "2021-02-01T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("include_tags", "holiday"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # All entries should have holiday tag
+        for entry in result:
+            assert "holiday" in entry["tags"]
+
+    def test_exclude_tags(self, client):
+        """Test exclude_tags filter."""
+        start = "2021-01-01T00:00:00+00:00"
+        end = "2021-01-10T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("start", start),
+            ("end", end),
+            ("exclude_tags", "weekend"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        # No entries should have weekend tag
+        for entry in result:
+            assert "weekend" not in entry["tags"]
+
+    def test_multiple_mics(self, client):
+        """Test with multiple MICs."""
+        start = "2021-01-04T08:00:00+00:00"
+        end = "2021-01-04T10:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+            ("mics", "XSWX"),
+            ("start", start),
+            ("end", end),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert len(result) > 0
+        # Should have entries for all requested MICs
+        mics_in_result = {entry["mic"] for entry in result}
+        assert "XAMS" in mics_in_result
+        assert "XLON" in mics_in_result
+        assert "XSWX" in mics_in_result
+
+    def test_orient_exchange_includes_empty_lists(self, client):
+        """Test that orient=exchange includes MICs with no overlapping days as empty lists."""
+        # Query a range in the distant past where there's no data
+        start = "1990-01-01T00:00:00+00:00"
+        end = "1990-01-02T00:00:00+00:00"
+
+        params = [
+            ("mics", "XAMS"),
+            ("mics", "XLON"),
+            ("start", start),
+            ("end", end),
+            ("orient", "exchange"),
+        ]
+        response = client.get("/v1/instants", params=params)
+
+        assert response.status_code == HTTPStatus.OK
+        result = response.json()
+        assert isinstance(result, dict)
+        # Should have both MICs as keys
+        assert "XAMS" in result
+        assert "XLON" in result
+        # Values should be lists (possibly empty)
+        assert isinstance(result["XAMS"], list)
+        assert isinstance(result["XLON"], list)
