@@ -79,3 +79,6 @@ exchange-calendar-service = "exchange_calendar_service.__main__:main"
 
 [tool.pytest.ini_options]
 addopts = "--cov=src/exchange_calendar_service --cov-report=term-missing"
+
+[tool.uv]
+exclude-newer = "10 days"
