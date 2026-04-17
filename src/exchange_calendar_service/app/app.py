@@ -6,7 +6,7 @@ from enum import Enum
 from collections.abc import Callable
 
 import exchange_calendars as ec
-import exchange_calendars_extensions.core as ecx_core
+import exchange_calendars_extensions as ecx
 import fastapi
 from fastapi import FastAPI
 
@@ -95,7 +95,7 @@ def get_app(_settings: Settings | None = None) -> FastAPI:
     Exchanges: type[Enum] = Enum("ExchangeEnum", {x: x for x in settings.exchanges})
 
     # Apply extensions to exchange calendars.
-    ecx_core.apply_extensions()
+    ecx.apply_extensions()
 
     # Initialize app context.
     _ = Context(cache=ExchangeCalendarCache(Exchanges.__members__.keys()))
@@ -164,7 +164,7 @@ def get_app(_settings: Settings | None = None) -> FastAPI:
     #         log.info("Received changes via endpoint.")
     #
     #         # Get currently applied changesets.
-    #         changes_dict_prev: ChangeSetDict = ecx_core.get_changes_for_all_calendars()
+    #         changes_dict_prev: ChangeSetDict = ecx.get_changes_for_all_calendars()
     #
     #         if changes_dict == changes_dict_prev:
     #             log.info("No changes.")
@@ -180,7 +180,7 @@ def get_app(_settings: Settings | None = None) -> FastAPI:
     #         keys_to_remove = set(changes_dict_prev.keys()) - set(changes_dict.keys())
     #
     #         # Reset all calendars.
-    #         ecx_core.reset_all_calendars()
+    #         ecx.reset_all_calendars()
     #
     #         # Apply change sets.
     #         for key in keys_to_add:
@@ -195,7 +195,7 @@ def get_app(_settings: Settings | None = None) -> FastAPI:
     #                 ],
     #                 logging.INFO,
     #             )
-    #             ecx_core.update_calendar(key, dict(changes_dict[key]))
+    #             ecx.update_calendar(key, dict(changes_dict[key]))
     #
     #         # Update existing change sets.
     #         for key in keys_to_update:
@@ -228,7 +228,7 @@ def get_app(_settings: Settings | None = None) -> FastAPI:
     #                 ]
     #                 log_iterable(log, diff, logging.INFO)
     #
-    #             ecx_core.update_calendar(key, dict(changes_dict[key]))
+    #             ecx.update_calendar(key, dict(changes_dict[key]))
     #
     #         # Remove change sets.
     #         for key in keys_to_remove:

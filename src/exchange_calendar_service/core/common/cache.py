@@ -3,8 +3,8 @@ from collections.abc import Iterable
 import exchange_calendars as ec
 import pandas as pd
 from cachetools import LFUCache, cached
-from exchange_calendars_extensions.core import ExtendedExchangeCalendar
-from exchange_calendars_extensions.core.util import get_weekmask_periods
+from exchange_calendars_extensions import ExtendedExchangeCalendar
+from exchange_calendars_extensions.util import get_weekmask_periods
 
 REGULAR_SLOTS = (
     "day",

@@ -28,7 +28,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "exchange-calendars-extensions>=0.9.3,<1",
+    "exchange-calendars-extensions>=0.10.0,<1",
     "fastapi>0,<1",
     "pyyaml>=6,<7",
     "pydantic-settings>=2,<3",
@@ -82,3 +82,4 @@ addopts = "--cov=src/exchange_calendar_service --cov-report=term-missing"
 
 [tool.uv]
 exclude-newer = "10 days"
+exclude-newer-package = { exchange-calendars-extensions = false }

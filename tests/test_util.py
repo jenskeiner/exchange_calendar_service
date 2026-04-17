@@ -1,10 +1,10 @@
 import exchange_calendars as ec
-import exchange_calendars_extensions.core as ex
+import exchange_calendars_extensions as ecx
 import pytest
 
 from exchange_calendar_service.core.util import ExchangeCalendarProxy, ExchangeCalendars
 
-ex.apply_extensions()
+ecx.apply_extensions()
 
 
 @pytest.fixture
@@ -13,7 +13,7 @@ def exchange_calendar():
 
 
 class TestExchangeCalendarProxy:
-    def test_properties(self, exchange_calendar: ex.ExtendedExchangeCalendar) -> None:
+    def test_properties(self, exchange_calendar: ecx.ExtendedExchangeCalendar) -> None:
         """
         Test that each property in the ExchangeCalendarProxy.PROPERTIES tuple is correctly copied from the
         exchange_calendar instance to the ExchangeCalendarProxy instance.
