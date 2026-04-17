@@ -11,7 +11,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-04-07T18:01:44.168779Z"
+exclude-newer = "2026-04-07T19:25:38.850981Z"
 exclude-newer-span = "P10D"
 
 [options.exclude-newer-package]
@@ -236,7 +236,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cachetools", specifier = ">6,<8" },
-    { name = "exchange-calendars-extensions", specifier = ">=0.9.3,<1" },
+    { name = "exchange-calendars-extensions", specifier = ">=0.10.0,<1" },
     { name = "fastapi", specifier = ">0,<1" },
     { name = "myers", specifier = ">1,<2" },
     { name = "pydantic-settings", specifier = ">=2,<3" },
