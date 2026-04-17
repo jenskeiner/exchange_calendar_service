@@ -9,6 +9,7 @@ from enum import Enum
 from typing import Annotated, Literal, Union
 from zoneinfo import ZoneInfo
 
+import numpy as np
 import pandas as pd
 from cachetools import LFUCache, cached
 from fastapi import APIRouter, HTTPException, Query, Security
@@ -313,11 +314,11 @@ def get_router(exchanges_enum: type[Enum]):
             # Weekend days can only coincide with holidays, but no other special days.
 
             weekend_days = SeriesIterator(
-                c.weekend_days.holidays(start=start, end=end, return_name=True)
+                c.weekend_days.holidays(start=start, end=end, return_name=True).replace(np.nan, None)
             )
 
             holidays = SeriesIterator(
-                c.holidays_all.holidays(start=start, end=end, return_name=True)
+                c.holidays_all.holidays(start=start, end=end, return_name=True).replace(np.nan, None)
             )
 
             while not weekend_days.is_empty() or not holidays.is_empty():
@@ -374,30 +375,30 @@ def get_router(exchanges_enum: type[Enum]):
                 # Weekdays can coincide with holidays (which then makes them non-business days), but also other special
                 # business days.
                 holidays = SeriesIterator(
-                    c.holidays_all.holidays(start=start, end=end, return_name=True)
+                    c.holidays_all.holidays(start=start, end=end, return_name=True).replace(np.nan, None)
                 )
                 special_closes = {
                     t: SeriesIterator(
-                        cal.holidays(start=start, end=end, return_name=True)
+                        cal.holidays(start=start, end=end, return_name=True).replace(np.nan, None)
                     )
                     for t, cal in c.special_closes
                 }
                 special_opens = {
                     t: SeriesIterator(
-                        cal.holidays(start=start, end=end, return_name=True)
+                        cal.holidays(start=start, end=end, return_name=True).replace(np.nan, None)
                     )
                     for t, cal in c.special_opens
                 }
                 quarterly_expiries = SeriesIterator(
                     c.quarterly_expiries.holidays(
                         start=start, end=end, return_name=True
-                    )
+                    ).replace(np.nan, None)
                 )
                 monthly_expiries = SeriesIterator(
-                    c.monthly_expiries.holidays(start=start, end=end, return_name=True)
+                    c.monthly_expiries.holidays(start=start, end=end, return_name=True).replace(np.nan, None)
                 )
                 ends_of_month = SeriesIterator(
-                    c.last_trading_days_of_months.holidays(start, end, return_name=True)
+                    c.last_trading_days_of_months.holidays(start, end, return_name=True).replace(np.nan, None)
                 )
 
                 for d in business_day_candidates:
