@@ -274,16 +274,16 @@ wheels = [
 
 [[package]]
 name = "exchange-calendars-extensions"
-version = "0.10.3"
+version = "0.10.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "exchange-calendars" },
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/37/cb/58a4d87e4c1f774d32a11eed805d6e3b53056982968f4cb9fefd3e3eee91/exchange_calendars_extensions-0.10.3.tar.gz", hash = "sha256:54d1b05b2fde3e2b61414d77737307a30ca5e97663230794980f45b8b01d3831", size = 69711, upload-time = "2026-04-24T07:32:48.318Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/b4/de094dcc75a587f35271d6595af4edbb6ff52c285b1a6c294e1d3ade41e1/exchange_calendars_extensions-0.10.4.tar.gz", hash = "sha256:565b00fcb199edfdd05dd6fa814c803ba00475e82ce8a53fec641e22f1184f0a", size = 70808, upload-time = "2026-04-28T21:07:19.499Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/74/7c/9acf85719c650e2ed86a89a73389a41db0431ef5ccb8dc735a3e57caa046/exchange_calendars_extensions-0.10.3-py3-none-any.whl", hash = "sha256:17f4581471b7ef1f382df420d4a6a7f5427e7de3037d37eeaa283edc2fcb4b7d", size = 43330, upload-time = "2026-04-24T07:32:47.046Z" },
+    { url = "https://files.pythonhosted.org/packages/26/ff/f5264c2b922339d66884915dced263996591a9de34ed7b020e588fcce432/exchange_calendars_extensions-0.10.4-py3-none-any.whl", hash = "sha256:2d7ab0ff3e7a1846e57aac69f2bda785e3979fd2e16c8b9842ff77f7e10b7b81", size = 43779, upload-time = "2026-04-28T21:07:18.193Z" },
 ]
 
 [[package]]
